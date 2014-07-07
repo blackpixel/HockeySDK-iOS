@@ -733,7 +733,7 @@
 			name = HockeySDKTests;
 			productName = HockeySDKTests;
 			productReference = 1E5A459016F0DFC200B55C04 /* HockeySDKTests.octest */;
-			productType = "com.apple.product-type.bundle";
+			productType = "com.apple.product-type.bundle.ocunit-test";
 		};
 /* End PBXNativeTarget section */
 
@@ -742,7 +742,7 @@
 			isa = PBXProject;
 			attributes = {
 				LastTestingUpgradeCheck = 0510;
-				LastUpgradeCheck = 0510;
+				LastUpgradeCheck = 0600;
 			};
 			buildConfigurationList = E4005614148D79B500EB22B9 /* Build configuration list for PBXProject "HockeySDK" */;
 			compatibilityVersion = "Xcode 3.2";
@@ -1292,6 +1292,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 5.0;
 				"IPHONEOS_DEPLOYMENT_TARGET[arch=arm64]" = 7.0;
 				MACOSX_DEPLOYMENT_TARGET = 10.5;
+				ONLY_ACTIVE_ARCH = YES;
 				RUN_CLANG_STATIC_ANALYZER = YES;
 				SDKROOT = iphoneos;
 			};
