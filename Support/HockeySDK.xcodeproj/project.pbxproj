@@ -999,7 +999,8 @@
 		1E5954F015B6F24A00A03429 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				"ARCHS[sdk=iphonesimulator*]" = "$(BIT_SIM_ARCHS)";
+				ARCHS = "$(ARCHS_STANDARD)";
+				"ARCHS[sdk=*]" = "$(ARCHS_STANDARD)";
 				DSTROOT = /tmp/HockeySDK.dst;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1016,13 +1017,15 @@
 		1E5954F115B6F24A00A03429 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				"ARCHS[sdk=iphonesimulator*]" = "$(BIT_SIM_ARCHS)";
+				ARCHS = "$(ARCHS_STANDARD)";
+				"ARCHS[sdk=iphonesimulator*]" = "$(ARCHS_STANDARD)";
 				DSTROOT = /tmp/HockeySDK.dst;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"\"$(SRCROOT)/../Vendor\"",
 				);
 				GCC_THUMB_SUPPORT = NO;
+				"IPHONEOS_DEPLOYMENT_TARGET[sdk=iphonesimulator*]" = 5.1.1;
 				OTHER_CFLAGS = (
 					"$(inherited)",
 					"-DNS_BLOCK_ASSERTIONS=1",
@@ -1167,7 +1170,7 @@
 		1E68F4A816F7843F00053706 /* CodeCoverage */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				"ARCHS[sdk=iphonesimulator*]" = "$(BIT_SIM_ARCHS)";
+				"ARCHS[sdk=iphonesimulator*]" = "$(ARCHS_STANDARD)";
 				DSTROOT = /tmp/HockeySDK.dst;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
