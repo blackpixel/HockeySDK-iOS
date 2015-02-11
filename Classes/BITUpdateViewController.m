@@ -125,7 +125,7 @@
   }
   
   NSUInteger footerViewSize = kMinPreviousVersionButtonHeight;
-  NSUInteger frameHeight = self.view.frame.size.height;
+  NSUInteger frameHeight = (NSUInteger)self.view.frame.size.height;
   if(tableViewContentHeight < frameHeight && (frameHeight - tableViewContentHeight > 100)) {
     footerViewSize = frameHeight - tableViewContentHeight;
   }

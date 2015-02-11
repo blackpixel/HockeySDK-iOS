@@ -386,14 +386,16 @@
 
 - (BOOL)shouldUseLiveIdentifier {
   BOOL delegateResult = NO;
-  if ([_delegate respondsToSelector:@selector(shouldUseLiveIdentifierForHockeyManager:)]) {
-    delegateResult = [(NSObject <BITHockeyManagerDelegate>*)_delegate shouldUseLiveIdentifierForHockeyManager:self];
+  typeof(_delegate) strongDelegate = _delegate;
+  if ([strongDelegate respondsToSelector:@selector(shouldUseLiveIdentifierForHockeyManager:)]) {
+    delegateResult = [(NSObject <BITHockeyManagerDelegate>*)strongDelegate shouldUseLiveIdentifierForHockeyManager:self];
   }
 
   return (delegateResult) || (_appStoreEnvironment);
 }
 
 - (void)initializeModules {
+  typeof(_delegate) strongDelegate = _delegate;
   _validAppIdentifier = [self checkValidityOfAppIdentifier:_appIdentifier];
   
   if (![self isSetUpOnMainThread]) return;
@@ -404,13 +406,13 @@
 #if HOCKEYSDK_FEATURE_CRASH_REPORTER
     BITHockeyLog(@"INFO: Setup CrashManager");
     _crashManager = [[BITCrashManager alloc] initWithAppIdentifier:_appIdentifier isAppStoreEnvironment:_appStoreEnvironment];
-    _crashManager.delegate = _delegate;
+    _crashManager.delegate = strongDelegate;
 #endif /* HOCKEYSDK_FEATURE_CRASH_REPORTER */
     
 #if HOCKEYSDK_FEATURE_UPDATES
     BITHockeyLog(@"INFO: Setup UpdateManager");
     _updateManager = [[BITUpdateManager alloc] initWithAppIdentifier:_appIdentifier isAppStoreEnvironment:_appStoreEnvironment];
-    _updateManager.delegate = _delegate;
+    _updateManager.delegate = strongDelegate;
 #endif /* HOCKEYSDK_FEATURE_UPDATES */
 
 #if HOCKEYSDK_FEATURE_STORE_UPDATES
@@ -421,7 +423,7 @@
 #if HOCKEYSDK_FEATURE_FEEDBACK
     BITHockeyLog(@"INFO: Setup FeedbackManager");
     _feedbackManager = [[BITFeedbackManager alloc] initWithAppIdentifier:_appIdentifier isAppStoreEnvironment:_appStoreEnvironment];
-    _feedbackManager.delegate = _delegate;
+    _feedbackManager.delegate = strongDelegate;
 #endif /* HOCKEYSDK_FEATURE_FEEDBACK */
 
 #if HOCKEYSDK_FEATURE_AUTHENTICATOR
@@ -429,7 +431,7 @@
     BITHockeyAppClient *client = [[BITHockeyAppClient alloc] initWithBaseURL:[NSURL URLWithString:_serverURL ? _serverURL : BITHOCKEYSDK_URL]];
     _authenticator = [[BITAuthenticator alloc] initWithAppIdentifier:_appIdentifier isAppStoreEnvironment:_appStoreEnvironment];
     _authenticator.hockeyAppClient = client;
-    _authenticator.delegate = _delegate;
+    _authenticator.delegate = strongDelegate;
 #endif /* HOCKEYSDK_FEATURE_AUTHENTICATOR */
 
 #if HOCKEYSDK_FEATURE_UPDATES

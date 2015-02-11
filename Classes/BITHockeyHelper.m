@@ -192,7 +192,7 @@ NSString *bit_appAnonID(void) {
 #pragma mark UIImage private helpers
 
 static void bit_addRoundedRectToPath(CGRect rect, CGContextRef context, CGFloat ovalWidth, CGFloat ovalHeight);
-static CGContextRef bit_MyOpenBitmapContext(int pixelsWide, int pixelsHigh);
+static CGContextRef bit_MyOpenBitmapContext(CGFloat pixelsWide, CGFloat pixelsHigh);
 static CGImageRef bit_CreateGradientImage(int pixelsWide, int pixelsHigh, float fromAlpha, float toAlpha);
 static BOOL bit_hasAlpha(UIImage *inputImage);
 UIImage *bit_imageWithAlpha(UIImage *inputImage);
@@ -254,7 +254,7 @@ CGImageRef bit_CreateGradientImage(int pixelsWide, int pixelsHigh, float fromAlp
   return theCGImage;
 }
 
-CGContextRef bit_MyOpenBitmapContext(int pixelsWide, int pixelsHigh) {
+CGContextRef bit_MyOpenBitmapContext(CGFloat pixelsWide, CGFloat pixelsHigh) {
   CGSize size = CGSizeMake(pixelsWide, pixelsHigh);
   UIGraphicsBeginImageContextWithOptions(size, NO, 0.0);
   
@@ -278,8 +278,8 @@ UIImage *bit_imageWithAlpha(UIImage *inputImage) {
   }
   
   CGImageRef imageRef = inputImage.CGImage;
-  size_t width = CGImageGetWidth(imageRef) * inputImage.scale;
-  size_t height = CGImageGetHeight(imageRef) * inputImage.scale;
+  size_t width = (size_t)(CGImageGetWidth(imageRef) * inputImage.scale);
+  size_t height = (size_t)(CGImageGetHeight(imageRef) * inputImage.scale);
   
   // The bitsPerComponent and bitmapInfo values are hard-coded to prevent an "unsupported parameter combination" error
   CGContextRef offscreenContext = CGBitmapContextCreate(NULL,
@@ -318,21 +318,21 @@ UIImage *bit_addGlossToImage(UIImage *inputImage) {
 #pragma mark UIImage helpers
 
 UIImage *bit_imageToFitSize(UIImage *inputImage, CGSize fitSize, BOOL honorScaleFactor) {
-	float imageScaleFactor = 1.0;
+	CGFloat imageScaleFactor = 1.0;
   if (honorScaleFactor) {
     if ([inputImage respondsToSelector:@selector(scale)]) {
       imageScaleFactor = [inputImage scale];
     }
   }
   
-  float sourceWidth = [inputImage size].width * imageScaleFactor;
-  float sourceHeight = [inputImage size].height * imageScaleFactor;
-  float targetWidth = fitSize.width;
-  float targetHeight = fitSize.height;
+  CGFloat sourceWidth = [inputImage size].width * imageScaleFactor;
+  CGFloat sourceHeight = [inputImage size].height * imageScaleFactor;
+  CGFloat targetWidth = fitSize.width;
+  CGFloat targetHeight = fitSize.height;
   
   // Calculate aspect ratios
-  float sourceRatio = sourceWidth / sourceHeight;
-  float targetRatio = targetWidth / targetHeight;
+  CGFloat sourceRatio = sourceWidth / sourceHeight;
+  CGFloat targetRatio = targetWidth / targetHeight;
   
   // Determine what side of the source image to use for proportional scaling
   BOOL scaleWidth = (sourceRatio <= targetRatio);
@@ -340,7 +340,7 @@ UIImage *bit_imageToFitSize(UIImage *inputImage, CGSize fitSize, BOOL honorScale
   scaleWidth = !scaleWidth;
   
   // Proportionally scale source image
-  float scalingFactor, scaledWidth, scaledHeight;
+  CGFloat scalingFactor, scaledWidth, scaledHeight;
   if (scaleWidth) {
     scalingFactor = 1.0 / sourceRatio;
     scaledWidth = targetWidth;
@@ -369,7 +369,7 @@ UIImage *bit_imageToFitSize(UIImage *inputImage, CGSize fitSize, BOOL honorScale
 	if (!image) {
     // Try older method.
     CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
-    CGContextRef context = CGBitmapContextCreate(NULL,  scaledWidth, scaledHeight, 8, (fitSize.width * 4),
+    CGContextRef context = CGBitmapContextCreate(NULL,  (size_t)scaledWidth, (size_t)scaledHeight, 8, (size_t)(fitSize.width * 4),
                                                  colorSpace, (CGBitmapInfo)kCGImageAlphaPremultipliedLast);
     sourceImg = CGImageCreateWithImageInRect([inputImage CGImage], sourceRect);
     CGContextDrawImage(context, destRect, sourceImg);
@@ -390,7 +390,7 @@ UIImage *bit_reflectedImageWithHeight(UIImage *inputImage, NSUInteger height, fl
     return nil;
   
   // create a bitmap graphics context the size of the image
-  CGContextRef mainViewContentContext = bit_MyOpenBitmapContext(inputImage.size.width, (int)height);
+  CGContextRef mainViewContentContext = bit_MyOpenBitmapContext(inputImage.size.width, (CGFloat)height);
   
   // create a 2 bit CGImage containing a gradient that will be used for masking the
   // main view content to create the 'fade' of the reflection.  The CGImageCreateWithMask
@@ -449,7 +449,7 @@ UIImage *bit_imageNamed(NSString *imageName, NSString *bundleName) {
 // Creates a copy of this image with rounded corners
 // If borderSize is non-zero, a transparent border of the given size will also be added
 // Original author: Björn Sållarp. Used with permission. See: http://blog.sallarp.com/iphone-uiimage-round-corners/
-UIImage *bit_roundedCornerImage(UIImage *inputImage, NSInteger cornerSize, NSInteger borderSize) {
+UIImage *bit_roundedCornerImage(UIImage *inputImage, CGFloat cornerSize, CGFloat borderSize) {
   // If the image does not have an alpha layer, add one
   
   UIImage *roundedImage = nil;
@@ -475,8 +475,8 @@ UIImage *bit_roundedCornerImage(UIImage *inputImage, NSInteger cornerSize, NSInt
     
     // Build a context that's the same dimensions as the new size
     context = CGBitmapContextCreate(NULL,
-                                    image.size.width,
-                                    image.size.height,
+                                    (size_t)image.size.width,
+                                    (size_t)image.size.height,
                                     CGImageGetBitsPerComponent(image.CGImage),
                                     0,
                                     CGImageGetColorSpace(image.CGImage),

@@ -46,7 +46,7 @@ NSString *bit_UUID(void);
 NSString *bit_appAnonID(void);
 
 /* UIImage helpers */
-UIImage *bit_roundedCornerImage(UIImage *inputImage, NSInteger cornerSize, NSInteger borderSize);
+UIImage *bit_roundedCornerImage(UIImage *inputImage, CGFloat cornerSize, CGFloat borderSize);
 UIImage *bit_imageToFitSize(UIImage *inputImage, CGSize fitSize, BOOL honorScaleFactor);
 UIImage *bit_reflectedImageWithHeight(UIImage *inputImage, NSUInteger height, float fromAlpha, float toAlpha);
 

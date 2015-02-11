@@ -117,8 +117,8 @@
     [button setTitle:BITHockeyLocalizedString(@"HockeyAuthenticationViewControllerWebLoginButtonTitle") forState:UIControlStateNormal];
     CGSize buttonSize = [button sizeThatFits:CGSizeMake(CGRectGetWidth(self.tableView.bounds),
                                                         kFooterHeight)];
-    button.frame = CGRectMake(floorf((CGRectGetWidth(containerView.bounds) - buttonSize.width) / 2.f),
-                              floorf((kFooterHeight - buttonSize.height) / 2.f),
+    button.frame = CGRectMake(floor((CGRectGetWidth(containerView.bounds) - buttonSize.width) / 2.f),
+                              floor((kFooterHeight - buttonSize.height) / 2.f),
                               buttonSize.width,
                               buttonSize.height);
     button.autoresizingMask = UIViewAutoresizingFlexibleBottomMargin | UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleRightMargin;
