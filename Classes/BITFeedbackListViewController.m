@@ -133,8 +133,8 @@
   [self.tableView setAutoresizingMask:UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth];
   typeof(self.manager) strongManager = self.manager;
   if ([strongManager isPreiOS7Environment]) {
-    [self.tableView setBackgroundColor:[UIColor colorWithRed:0.82 green:0.84 blue:0.84 alpha:1]];
-    [self.tableView setSeparatorColor:[UIColor colorWithRed:0.79 green:0.79 blue:0.79 alpha:1]];
+    [self.tableView setBackgroundColor:[UIColor colorWithRed:0.82f green:0.84f blue:0.84f alpha:1.0f]];
+    [self.tableView setSeparatorColor:[UIColor colorWithRed:0.79f green:0.79f blue:0.79f alpha:1.0f]];
   } else {
     //    [self.tableView setBackgroundColor:[UIColor colorWithRed:1.0 green:1.0 blue:1.0 alpha:1]];
   }
