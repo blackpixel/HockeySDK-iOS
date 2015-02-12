@@ -27,6 +27,7 @@
  */
 
 #import "BITArrowImageAnnotation.h"
+#import "tgmath.h"
 
 #define kArrowPointCount 7
 
