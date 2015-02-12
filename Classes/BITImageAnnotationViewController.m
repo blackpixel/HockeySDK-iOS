@@ -202,7 +202,7 @@ typedef NS_ENUM(NSInteger, BITImageAnnotationViewControllerInteractionMode) {
   UIGraphicsBeginImageContextWithOptions(self.image.size, YES, 0.0);
   CGContextRef ctx = UIGraphicsGetCurrentContext();
   [self.image drawInRect:CGRectMake(0, 0, self.image.size.width, self.image.size.height)];
-  CGContextScaleCTM(ctx,1.0/self.scaleFactor,1.0f/self.scaleFactor);
+  CGContextScaleCTM(ctx,1.0f/self.scaleFactor,1.0f/self.scaleFactor);
   
   // Drawing all the annotations onto the final image.
   for (BITImageAnnotation *annotation in self.objects){

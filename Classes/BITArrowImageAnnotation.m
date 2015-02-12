@@ -71,7 +71,7 @@
   CGFloat startX, startY, endX, endY;
   
   CGRect boundRect = CGRectInset(self.bounds, 0, 0);
-  CGFloat arrowLength= sqrt(pow(CGRectGetWidth(boundRect), 2) + pow(CGRectGetHeight(boundRect), 2));
+  CGFloat arrowLength= (CGFloat)sqrt(pow(CGRectGetWidth(boundRect), 2) + pow(CGRectGetHeight(boundRect), 2));
   if (arrowLength < 30){
     
     CGFloat factor = 30.f/arrowLength;
