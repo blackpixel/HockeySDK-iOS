@@ -772,11 +772,11 @@ UIImage *bit_screenshot(void) {
                             -[window bounds].size.height * [[window layer] anchorPoint].y);
       
       if (isLandscapeLeft) {
-        CGContextConcatCTM(context, CGAffineTransformRotate(CGAffineTransformMakeTranslation( imageSize.width, 0), M_PI / 2.0));
+        CGContextConcatCTM(context, CGAffineTransformRotate(CGAffineTransformMakeTranslation( imageSize.width, 0), (CGFloat)(M_PI / 2.0f)));
       } else if (isLandscapeRight) {
-        CGContextConcatCTM(context, CGAffineTransformRotate(CGAffineTransformMakeTranslation( 0, imageSize.height), 3 * M_PI / 2.0));
+        CGContextConcatCTM(context, CGAffineTransformRotate(CGAffineTransformMakeTranslation( 0, imageSize.height), (CGFloat)(3 * M_PI / 2.0f)));
       } else if (isUpsideDown) {
-        CGContextConcatCTM(context, CGAffineTransformRotate(CGAffineTransformMakeTranslation( imageSize.width, imageSize.height), M_PI));
+        CGContextConcatCTM(context, CGAffineTransformRotate(CGAffineTransformMakeTranslation( imageSize.width, imageSize.height), (CGFloat)(M_PI)));
       }
       
       if ([window respondsToSelector:@selector(drawViewHierarchyInRect:afterScreenUpdates:)]) {
