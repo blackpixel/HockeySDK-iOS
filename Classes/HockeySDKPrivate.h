@@ -41,6 +41,12 @@
 
 #define BITHOCKEY_FEEDBACK_SETTINGS @"BITFeedbackManager.plist"
 
+#define BITHOCKEY_USAGE_DATA @"BITUpdateManager.plist"
+
+#define kBITHockeyMetaUserName  @"BITHockeyMetaUserName"
+#define kBITHockeyMetaUserEmail @"BITHockeyMetaUserEmail"
+#define kBITHockeyMetaUserID    @"BITHockeyMetaUserID"
+
 #define kBITUpdateInstalledUUID              @"BITUpdateInstalledUUID"
 #define kBITUpdateInstalledVersionID         @"BITUpdateInstalledVersionID"
 #define kBITUpdateCurrentCompanyName         @"BITUpdateCurrentCompanyName"
@@ -56,6 +62,8 @@
 #define kBITStoreUpdateLastUUID              @"BITStoreUpdateLastUUID"
 #define kBITStoreUpdateIgnoreVersion         @"BITStoreUpdateIgnoredVersion"
 
+#define BITHOCKEY_INTEGRATIONFLOW_TIMESTAMP  @"BITIntegrationFlowStartTimestamp"
+
 #define BITHOCKEYSDK_BUNDLE @"HockeySDKResources.bundle"
 #define BITHOCKEYSDK_URL @"https://sdk.hockeyapp.net/"
 
@@ -66,6 +74,10 @@
 NSBundle *BITHockeyBundle(void);
 NSString *BITHockeyLocalizedString(NSString *stringToken);
 NSString *BITHockeyMD5(NSString *str);
+
+#ifndef __IPHONE_8_0
+#define __IPHONE_8_0     80000
+#endif
 
 #ifdef __IPHONE_6_0
 

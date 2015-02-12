@@ -1,10 +1,7 @@
-//
-//  BITAuthenticator_Private.h
-//  HockeySDK
 /*
  * Author: Stephan Diederich
  *
- * Copyright (c) 2013 HockeyApp, Bit Stadium GmbH.
+ * Copyright (c) 2013-2014 HockeyApp, Bit Stadium GmbH.
  * All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person
@@ -38,6 +35,18 @@
 @interface BITAuthenticator ()<BITAuthenticationViewControllerDelegate, UIAlertViewDelegate>
 
 /**
+ Delegate that can be used to do any last minute configurations on the
+ presented viewController.
+ 
+ The delegate is automatically set by using `[BITHockeyManager setDelegate:]`. You
+ should not need to set this delegate individually.
+ 
+ @see `[BITHockeyManager setDelegate:]`
+ @see BITAuthenticatorDelegate
+ */
+@property (nonatomic, weak) id<BITAuthenticatorDelegate> delegate;
+
+/**
  * must be set
  */
 @property (nonatomic, strong) BITHockeyAppClient *hockeyAppClient;
@@ -60,11 +69,11 @@
 @property (nonatomic, copy, readonly) NSString *installationIdentifier;
 
 /**
- * method registered as observer for applicationWillBecomeInactive events
+ * method registered as observer for applicationDidEnterBackground events
  *
  * @param note NSNotification
  */
-- (void) applicationWillResignActive:(NSNotification*) note;
+- (void) applicationDidEnterBackground:(NSNotification*) note;
 
 /**
  * method registered as observer for applicationsDidBecomeActive events

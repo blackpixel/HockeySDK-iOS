@@ -2,7 +2,7 @@
  * Author: Andreas Linde <mail@andreaslinde.de>
  *         Peter Steinberger
  *
- * Copyright (c) 2012-2013 HockeyApp, Bit Stadium GmbH.
+ * Copyright (c) 2012-2014 HockeyApp, Bit Stadium GmbH.
  * Copyright (c) 2011-2012 Peter Steinberger.
  * All rights reserved.
  *
@@ -53,7 +53,7 @@
 
 #pragma mark - NSObject
 
-- (id)initWithFrame:(CGRect)frame {
+- (instancetype)initWithFrame:(CGRect)frame {
   if ((self = [super initWithFrame:frame])) {
     self.autoresizingMask = UIViewAutoresizingFlexibleWidth;
     self.backgroundColor = kWhiteBackgroundColorDefault;

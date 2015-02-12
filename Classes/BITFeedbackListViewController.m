@@ -1,7 +1,7 @@
 /*
  * Author: Andreas Linde <mail@andreaslinde.de>
  *
- * Copyright (c) 2012-2013 HockeyApp, Bit Stadium GmbH.
+ * Copyright (c) 2012-2014 HockeyApp, Bit Stadium GmbH.
  * All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person
@@ -34,17 +34,20 @@
 #import "HockeySDKPrivate.h"
 
 #import "BITFeedbackManagerPrivate.h"
+#import "BITFeedbackManager.h"
 #import "BITFeedbackListViewController.h"
 #import "BITFeedbackListViewCell.h"
 #import "BITFeedbackComposeViewController.h"
 #import "BITFeedbackUserDataViewController.h"
 #import "BITFeedbackMessage.h"
+#import "BITFeedbackMessageAttachment.h"
 #import "BITAttributedLabel.h"
 
 #import "BITHockeyBaseManagerPrivate.h"
 
 #import "BITHockeyHelper.h"
 #import <QuartzCore/QuartzCore.h>
+#import <QuickLook/QuickLook.h>
 
 
 #define DEFAULT_BACKGROUNDCOLOR BIT_RGBCOLOR(245, 245, 245)
@@ -64,11 +67,13 @@
 #define BORDER_COLOR BIT_RGBCOLOR(215, 215, 215)
 
 
-@interface BITFeedbackListViewController () <BITFeedbackUserDataDelegate, BITFeedbackComposeViewControllerDelegate, BITAttributedLabelDelegate>
+@interface BITFeedbackListViewController () <BITFeedbackUserDataDelegate, BITFeedbackComposeViewControllerDelegate, BITAttributedLabelDelegate, BITFeedbackListViewCellDelegate>
 
 @property (nonatomic, weak) BITFeedbackManager *manager;
 @property (nonatomic, strong) NSDateFormatter *lastUpdateDateFormatter;
 @property (nonatomic) BOOL userDataComposeFlow;
+@property (nonatomic, strong) NSArray *cachedPreviewItems;
+@property (nonatomic, strong) NSOperationQueue *thumbnailQueue;
 
 @end
 
@@ -86,10 +91,12 @@
     _userButtonSection = -1;
     _userDataComposeFlow = NO;
     
-    self.lastUpdateDateFormatter = [[NSDateFormatter alloc] init];
-		[self.lastUpdateDateFormatter setDateStyle:NSDateFormatterShortStyle];
-		[self.lastUpdateDateFormatter setTimeStyle:NSDateFormatterShortStyle];
-		self.lastUpdateDateFormatter.locale = [NSLocale currentLocale];
+    _lastUpdateDateFormatter = [[NSDateFormatter alloc] init];
+		[_lastUpdateDateFormatter setDateStyle:NSDateFormatterShortStyle];
+		[_lastUpdateDateFormatter setTimeStyle:NSDateFormatterShortStyle];
+		_lastUpdateDateFormatter.locale = [NSLocale currentLocale];
+    
+    _thumbnailQueue = [NSOperationQueue new];
   }
   return self;
 }
@@ -98,7 +105,7 @@
 - (void)dealloc {
   [[NSNotificationCenter defaultCenter] removeObserver:self name:BITHockeyFeedbackMessagesLoadingStarted object:nil];
   [[NSNotificationCenter defaultCenter] removeObserver:self name:BITHockeyFeedbackMessagesLoadingFinished object:nil];
-
+  
   [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(showDelayedUserDataViewController) object:nil];
 }
 
@@ -107,12 +114,12 @@
 
 - (void)viewDidLoad {
   [super viewDidLoad];
-
+  
   [[NSNotificationCenter defaultCenter] addObserver:self
                                            selector:@selector(startLoadingIndicator)
                                                name:BITHockeyFeedbackMessagesLoadingStarted
                                              object:nil];
-
+  
   [[NSNotificationCenter defaultCenter] addObserver:self
                                            selector:@selector(updateList)
                                                name:BITHockeyFeedbackMessagesLoadingFinished
@@ -124,17 +131,18 @@
   self.tableView.dataSource = self;
   self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
   [self.tableView setAutoresizingMask:UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth];
-  if ([self.manager isPreiOS7Environment]) {
+  typeof(self.manager) strongManager = self.manager;
+  if ([strongManager isPreiOS7Environment]) {
     [self.tableView setBackgroundColor:[UIColor colorWithRed:0.82 green:0.84 blue:0.84 alpha:1]];
     [self.tableView setSeparatorColor:[UIColor colorWithRed:0.79 green:0.79 blue:0.79 alpha:1]];
   } else {
-//    [self.tableView setBackgroundColor:[UIColor colorWithRed:1.0 green:1.0 blue:1.0 alpha:1]];
+    //    [self.tableView setBackgroundColor:[UIColor colorWithRed:1.0 green:1.0 blue:1.0 alpha:1]];
   }
   
-  if ([self.manager isPreiOS7Environment]) {
+  if ([strongManager isPreiOS7Environment]) {
     self.view.backgroundColor = DEFAULT_BACKGROUNDCOLOR;
   } else {
-//    self.view.backgroundColor = DEFAULT_BACKGROUNDCOLOR_OS7;
+    //    self.view.backgroundColor = DEFAULT_BACKGROUNDCOLOR_OS7;
   }
   
   id refreshClass = NSClassFromString(@"UIRefreshControl");
@@ -143,9 +151,9 @@
     [self.refreshControl addTarget:self action:@selector(reloadList) forControlEvents:UIControlEventValueChanged];
   } else {
     self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemRefresh
-                                                                                            target:self
-                                                                                            action:@selector(reloadList)];
-  }  
+                                                                                           target:self
+                                                                                           action:@selector(reloadList)];
+  }
 }
 
 - (void)startLoadingIndicator {
@@ -175,16 +183,19 @@
 }
 
 - (void)reloadList {
+  typeof(self.manager) strongManager = self.manager;
   [self startLoadingIndicator];
   
-  [self.manager updateMessagesList];
+  [strongManager updateMessagesList];
 }
 
 - (void)updateList {
   CGSize contentSize = self.tableView.contentSize;
   CGPoint contentOffset = self.tableView.contentOffset;
   
+  [self refreshPreviewItems];
   [self.tableView reloadData];
+  
   if (contentSize.height > 0 &&
       self.tableView.contentSize.height > self.tableView.frame.size.height &&
       self.tableView.contentSize.height > contentSize.height &&
@@ -192,26 +203,27 @@
     [self.tableView setContentOffset:CGPointMake(contentOffset.x, self.tableView.contentSize.height - contentSize.height + contentOffset.y) animated:NO];
   
   [self stopLoadingIndicator];
-
+  
   [self.tableView flashScrollIndicators];
 }
 
 - (void)viewDidAppear:(BOOL)animated {
+  typeof(self.manager) strongManager = self.manager;
   if (self.userDataComposeFlow) {
     self.userDataComposeFlow = NO;
   }
-  self.manager.currentFeedbackListViewController = self;
+  strongManager.currentFeedbackListViewController = self;
   
-  [self.manager updateMessagesListIfRequired];
+  [strongManager updateMessagesListIfRequired];
   
-  if ([self.manager numberOfMessages] == 0 &&
-      [self.manager askManualUserDataAvailable] &&
-      [self.manager requireManualUserDataMissing] &&
-      ![self.manager didAskUserData]
+  if ([strongManager numberOfMessages] == 0 &&
+      [strongManager askManualUserDataAvailable] &&
+      [strongManager requireManualUserDataMissing] &&
+      ![strongManager didAskUserData]
       ) {
     self.userDataComposeFlow = YES;
     
-    if ([self.manager showFirstRequiredPresentationModal]) {
+    if ([strongManager showFirstRequiredPresentationModal]) {
       [self setUserDataAction:nil];
     } else {
       // In case of presenting the feedback in a UIPopoverController it appears
@@ -224,12 +236,13 @@
   } else {
     [self.tableView reloadData];
   }
-
+  
   [super viewDidAppear:animated];
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
-  self.manager.currentFeedbackListViewController = nil;
+  typeof(self.manager) strongManager = self.manager;
+  strongManager.currentFeedbackListViewController = nil;
   
   [super viewWillDisappear:animated];
 }
@@ -245,26 +258,31 @@
 }
 
 - (void)setUserDataAction:(id)sender {
+  typeof(self.manager) strongManager = self.manager;
   BITFeedbackUserDataViewController *userController = [[BITFeedbackUserDataViewController alloc] initWithStyle:UITableViewStyleGrouped];
   userController.delegate = self;
   
-  UINavigationController *navController = [self.manager customNavigationControllerWithRootViewController:userController
+  UINavigationController *navController = [strongManager customNavigationControllerWithRootViewController:userController
                                                                                        presentationStyle:UIModalPresentationFormSheet];
   
   [self presentViewController:navController animated:YES completion:nil];
 }
 
 - (void)newFeedbackAction:(id)sender {
-  BITFeedbackComposeViewController *composeController = [[BITFeedbackComposeViewController alloc] init];
-
-  UINavigationController *navController = [self.manager customNavigationControllerWithRootViewController:composeController
+  typeof(self.manager) strongManager = self.manager;
+  BITFeedbackComposeViewController *composeController = [strongManager feedbackComposeViewController];
+  
+  UINavigationController *navController = [strongManager customNavigationControllerWithRootViewController:composeController
                                                                                        presentationStyle:UIModalPresentationFormSheet];
   
   [self presentViewController:navController animated:YES completion:nil];
 }
 
 - (void)deleteAllMessages {
-  [_manager deleteAllMessages];
+  typeof(self.manager) strongManager = self.manager;
+  [strongManager deleteAllMessages];
+  [self refreshPreviewItems];
+  
   [self.tableView reloadData];
 }
 
@@ -282,9 +300,9 @@
   } else {
     UIAlertView *deleteAction = [[UIAlertView alloc] initWithTitle:BITHockeyLocalizedString(@"HockeyFeedbackListButonDeleteAllMessages")
                                                            message:BITHockeyLocalizedString(@"HockeyFeedbackListDeleteAllTitle")
-                                                       delegate:self
-                                              cancelButtonTitle:BITHockeyLocalizedString(@"HockeyFeedbackListDeleteAllCancel")
-                                              otherButtonTitles:BITHockeyLocalizedString(@"HockeyFeedbackListDeleteAllDelete"), nil];
+                                                          delegate:self
+                                                 cancelButtonTitle:BITHockeyLocalizedString(@"HockeyFeedbackListDeleteAllCancel")
+                                                 otherButtonTitles:BITHockeyLocalizedString(@"HockeyFeedbackListDeleteAllDelete"), nil];
     
     [deleteAction setTag:0];
     [deleteAction show];
@@ -312,8 +330,9 @@
 #pragma mark - BITFeedbackUserDataDelegate
 
 -(void)userDataUpdateCancelled {
+  typeof(self.manager) strongManager = self.manager;
   if (self.userDataComposeFlow) {
-    if ([self.manager showFirstRequiredPresentationModal]) {
+    if ([strongManager showFirstRequiredPresentationModal]) {
       __weak typeof(self) weakSelf = self;
       [self dismissViewControllerAnimated:YES completion:^(void){
         typeof(self) strongSelf = weakSelf;
@@ -328,10 +347,12 @@
 }
 
 -(void)userDataUpdateFinished {
-  [self.manager saveMessages];
+  typeof(self.manager) strongManager = self.manager;
+  [strongManager saveMessages];
+  [self refreshPreviewItems];
   
   if (self.userDataComposeFlow) {
-    if ([self.manager showFirstRequiredPresentationModal]) {
+    if ([strongManager showFirstRequiredPresentationModal]) {
       __weak typeof(self) weakSelf = self;
       [self dismissViewControllerAnimated:YES completion:^(void){
         typeof(self) strongSelf = weakSelf;
@@ -353,8 +374,9 @@
 
 - (void)feedbackComposeViewController:(BITFeedbackComposeViewController *)composeViewController
                   didFinishWithResult:(BITFeedbackComposeResult)composeResult {
+  typeof(self.manager) strongManager = self.manager;
   if (self.userDataComposeFlow) {
-    if ([self.manager showFirstRequiredPresentationModal]) {
+    if ([strongManager showFirstRequiredPresentationModal]) {
       __weak typeof(self) weakSelf = self;
       [self dismissViewControllerAnimated:YES completion:^(void){
         typeof(self) strongSelf = weakSelf;
@@ -365,6 +387,16 @@
     }
   } else {
     [self dismissViewControllerAnimated:YES completion:^(void){}];
+  }
+  
+  if (strongManager.delegate &&
+      [strongManager.delegate respondsToSelector:@selector(feedbackComposeViewController:didFinishWithResult:)]) {
+    [strongManager.delegate feedbackComposeViewController:composeViewController didFinishWithResult:composeResult];
+  } else if (strongManager.delegate && [strongManager.delegate respondsToSelector:@selector(feedbackComposeViewControllerDidFinish:)]) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated"
+    [strongManager.delegate feedbackComposeViewControllerDidFinish:composeViewController];
+#pragma clang diagnostic pop
   }
 }
 
@@ -384,16 +416,17 @@
 #pragma mark - Table view data source
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
+  typeof(self.manager) strongManager = self.manager;
   NSInteger sections = 2;
   _deleteButtonSection = -1;
   _userButtonSection = -1;
   
-  if ([self.manager isManualUserDataAvailable] || [self.manager didAskUserData]) {
+  if ([strongManager isManualUserDataAvailable] || [strongManager didAskUserData]) {
     _userButtonSection = sections;
     sections++;
   }
   
-  if ([self.manager numberOfMessages] > 0) {
+  if ([strongManager numberOfMessages] > 0) {
     _deleteButtonSection = sections;
     sections++;
   }
@@ -403,14 +436,16 @@
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
   if (section == 1) {
-    return [self.manager numberOfMessages];
+    typeof(self.manager) strongManager = self.manager;
+    return [strongManager numberOfMessages];
   } else {
     return 1;
   }
 }
 
 - (CGFloat)tableView:(UITableView *)tableView heightForHeaderInSection:(NSInteger)section {
-  if (![self.manager isPreiOS7Environment]) {
+  typeof(self.manager) strongManager = self.manager;
+  if (![strongManager isPreiOS7Environment]) {
     if (section == 0) {
       return 30;
     }
@@ -420,11 +455,12 @@
 }
 
 - (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section {
-  if (![self.manager isPreiOS7Environment] && section == 0) {
+  typeof(strongManager) strongManager = strongManager;
+if (![strongManager isPreiOS7Environment] && section == 0) {
     UIView *containerView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, self.view.frame.size.width, 30.0f)];
     UILabel *textLabel = [[UILabel alloc] initWithFrame:CGRectMake(16.0f, 5.0f, self.view.frame.size.width - 32.0f, 25.0f)];
     textLabel.text = [NSString stringWithFormat:BITHockeyLocalizedString(@"HockeyFeedbackListLastUpdated"),
-                      [self.manager lastCheck] ? [self.lastUpdateDateFormatter stringFromDate:[self.manager lastCheck]] : BITHockeyLocalizedString(@"HockeyFeedbackListNeverUpdated")];
+                      [strongManager lastCheck] ? [self.lastUpdateDateFormatter stringFromDate:[strongManager lastCheck]] : BITHockeyLocalizedString(@"HockeyFeedbackListNeverUpdated")];
     textLabel.font = [UIFont systemFontOfSize:10];
     textLabel.textColor = DEFAULT_TEXTCOLOR;
     [containerView addSubview:textLabel];
@@ -442,7 +478,8 @@
   static NSString *ButtonBottomIdentifier = @"ButtonBottomCell";
   static NSString *ButtonDeleteIdentifier = @"ButtonDeleteCell";
   
-  if (indexPath.section == 0 && indexPath.row == 1 && ![self.manager isPreiOS7Environment]) {
+  typeof(strongManager) strongManager = strongManager;
+  if (indexPath.section == 0 && indexPath.row == 1 && ![strongManager isPreiOS7Environment]) {
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:LastUpdateIdentifier];
     
     if (!cell) {
@@ -455,7 +492,7 @@
     }
     
     cell.textLabel.text = [NSString stringWithFormat:BITHockeyLocalizedString(@"HockeyFeedbackListLastUpdated"),
-                           [self.manager lastCheck] ? [self.lastUpdateDateFormatter stringFromDate:[self.manager lastCheck]] : BITHockeyLocalizedString(@"HockeyFeedbackListNeverUpdated")];
+                           [strongManager lastCheck] ? [self.lastUpdateDateFormatter stringFromDate:[strongManager lastCheck]] : BITHockeyLocalizedString(@"HockeyFeedbackListNeverUpdated")];
     
     return cell;
   } else if (indexPath.section == 0 || indexPath.section >= 2) {
@@ -477,12 +514,12 @@
     
     if (!cell) {
       cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:identifier];
-
+      
       cell.textLabel.font = [UIFont systemFontOfSize:14];
       cell.textLabel.numberOfLines = 0;
       cell.accessoryType = UITableViewCellAccessoryNone;
       
-      if ([self.manager isPreiOS7Environment]) {
+      if ([strongManager isPreiOS7Environment]) {
         cell.selectionStyle = UITableViewCellSelectionStyleNone;
       } else {
         cell.selectionStyle = UITableViewCellSelectionStyleGray;
@@ -495,7 +532,7 @@
     UIColor *titleColor = BIT_RGBCOLOR(35, 111, 251);
     
     UIButton *button = nil;
-    if ([self.manager isPreiOS7Environment]) {
+    if ([strongManager isPreiOS7Environment]) {
       button = [UIButton buttonWithType:UIButtonTypeCustom];
       button.autoresizingMask = UIViewAutoresizingFlexibleWidth;
       UIImage *stretchableButton = [bit_imageNamed(@"buttonRoundedRegular.png", BITHOCKEYSDK_BUNDLE) stretchableImageWithLeftCapWidth:10 topCapHeight:0];
@@ -512,7 +549,7 @@
     
     if (indexPath.section == 0) {
       topGap = 22;
-      if ([self.manager numberOfMessages] == 0) {
+      if ([strongManager numberOfMessages] == 0) {
         titleString = BITHockeyLocalizedString(@"HockeyFeedbackListButonWriteFeedback");
       } else {
         titleString = BITHockeyLocalizedString(@"HockeyFeedbackListButonWriteResponse");
@@ -520,15 +557,15 @@
       actionSelector = @selector(newFeedbackAction:);
     } else if (indexPath.section == _userButtonSection) {
       topGap = 6.0f;
-      if ([self.manager requireUserName] == BITFeedbackUserDataElementRequired ||
-          ([self.manager requireUserName] == BITFeedbackUserDataElementOptional && [self.manager userName] != nil)
+      if ([strongManager requireUserName] == BITFeedbackUserDataElementRequired ||
+          ([strongManager requireUserName] == BITFeedbackUserDataElementOptional && [strongManager userName] != nil)
           ) {
-        titleString = [NSString stringWithFormat:BITHockeyLocalizedString(@"HockeyFeedbackListButonUserDataWithName"), [self.manager userName] ?: @"-"];
-      } else if ([self.manager requireUserEmail] == BITFeedbackUserDataElementRequired ||
-                 ([self.manager requireUserEmail] == BITFeedbackUserDataElementOptional && [self.manager userEmail] != nil)
+        titleString = [NSString stringWithFormat:BITHockeyLocalizedString(@"HockeyFeedbackListButonUserDataWithName"), [strongManager userName] ?: @"-"];
+      } else if ([strongManager requireUserEmail] == BITFeedbackUserDataElementRequired ||
+                 ([strongManager requireUserEmail] == BITFeedbackUserDataElementOptional && [strongManager userEmail] != nil)
                  ) {
-        titleString = [NSString stringWithFormat:BITHockeyLocalizedString(@"HockeyFeedbackListButonUserDataWithEmail"), [self.manager userEmail] ?: @"-"];
-      } else if ([self.manager requireUserName] == BITFeedbackUserDataElementOptional) {
+        titleString = [NSString stringWithFormat:BITHockeyLocalizedString(@"HockeyFeedbackListButonUserDataWithEmail"), [strongManager userEmail] ?: @"-"];
+      } else if ([strongManager requireUserName] == BITFeedbackUserDataElementOptional) {
         titleString = BITHockeyLocalizedString(@"HockeyFeedbackListButonUserDataSetName");
       } else {
         titleString = BITHockeyLocalizedString(@"HockeyFeedbackListButonUserDataSetEmail");
@@ -536,7 +573,7 @@
       actionSelector = @selector(setUserDataAction:);
     } else {
       topGap = 0.0f;
-      if ([self.manager isPreiOS7Environment]) {
+      if ([strongManager isPreiOS7Environment]) {
         [[button titleLabel] setShadowOffset:CGSizeMake(0, -1)];
         UIImage *stretchableDeleteButton = [bit_imageNamed(@"buttonRoundedDelete.png", BITHOCKEYSDK_BUNDLE) stretchableImageWithLeftCapWidth:10 topCapHeight:0];
         UIImage *stretchableDeleteHighlightedButton = [bit_imageNamed(@"buttonRoundedDeleteHighlighted.png", BITHOCKEYSDK_BUNDLE) stretchableImageWithLeftCapWidth:10 topCapHeight:0];
@@ -552,7 +589,7 @@
       actionSelector = @selector(deleteAllMessagesAction:);
     }
     
-    if ([self.manager isPreiOS7Environment]) {
+    if ([strongManager isPreiOS7Environment]) {
       if (titleString)
         [button setTitle:titleString forState:UIControlStateNormal];
       if (actionSelector)
@@ -565,7 +602,7 @@
       cell.textLabel.textColor = titleColor;
     }
     
-    if ([self.manager isPreiOS7Environment]) {
+    if ([strongManager isPreiOS7Environment]) {
       // status label or shadow lines
       if (indexPath.section == 0) {
         UILabel *statusLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, 6, cell.frame.size.width, 28)];
@@ -573,7 +610,7 @@
         statusLabel.font = [UIFont systemFontOfSize:10];
         statusLabel.textColor = DEFAULT_TEXTCOLOR;
         statusLabel.textAlignment = kBITTextLabelAlignmentCenter;
-        if ([self.manager isPreiOS7Environment]) {
+        if ([strongManager isPreiOS7Environment]) {
           statusLabel.backgroundColor = DEFAULT_BACKGROUNDCOLOR;
         } else {
           statusLabel.backgroundColor = DEFAULT_BACKGROUNDCOLOR_OS7;
@@ -581,7 +618,7 @@
         statusLabel.autoresizingMask = UIViewAutoresizingFlexibleWidth;
         
         statusLabel.text = [NSString stringWithFormat:BITHockeyLocalizedString(@"HockeyFeedbackListLastUpdated"),
-                            [self.manager lastCheck] ? [self.lastUpdateDateFormatter stringFromDate:[self.manager lastCheck]] : BITHockeyLocalizedString(@"HockeyFeedbackListNeverUpdated")];
+                            [strongManager lastCheck] ? [self.lastUpdateDateFormatter stringFromDate:[strongManager lastCheck]] : BITHockeyLocalizedString(@"HockeyFeedbackListNeverUpdated")];
         
         [cell addSubview:statusLabel];
       } else if (indexPath.section == 2) {
@@ -608,20 +645,38 @@
       cell.backgroundStyle = BITFeedbackListViewCellBackgroundStyleNormal;
     }
     
-    if ([self.manager isPreiOS7Environment]) {
+    if ([strongManager isPreiOS7Environment]) {
       cell.style = BITFeedbackListViewCellPresentatationStyleDefault;
     } else {
       cell.style = BITFeedbackListViewCellPresentatationStyleOS7;
     }
     
-    BITFeedbackMessage *message = [self.manager messageAtIndex:indexPath.row];
+    BITFeedbackMessage *message = [strongManager messageAtIndex:indexPath.row];
     cell.message = message;
     cell.labelText.delegate = self;
     cell.labelText.userInteractionEnabled = YES;
-
+    cell.delegate = self;
+    [cell setAttachments:message.previewableAttachments];
+    
+    for (BITFeedbackMessageAttachment *attachment in message.attachments){
+      if (attachment.needsLoadingFromURL && !attachment.isLoading){
+        attachment.isLoading = YES;
+        NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:attachment.sourceURL]];
+        [NSURLConnection sendAsynchronousRequest:request queue:self.thumbnailQueue completionHandler:^(NSURLResponse *response, NSData *responseData, NSError *err) {
+          if (responseData.length) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+              [attachment replaceData:responseData];
+              [self.tableView reloadRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationNone];
+              [[BITHockeyManager sharedHockeyManager].feedbackManager saveMessages];
+            });
+          }
+        }];
+      }
+    }
+    
     if (
-        [self.manager isPreiOS7Environment] ||
-        (![self.manager isPreiOS7Environment] && indexPath.row != 0)
+        [strongManager isPreiOS7Environment] ||
+        (![strongManager isPreiOS7Environment] && indexPath.row != 0)
         ) {
       UIView *lineView1 = [[UIView alloc] initWithFrame:CGRectMake(0, 0, cell.frame.size.width, 1)];
       lineView1.backgroundColor = BORDER_COLOR;
@@ -643,11 +698,18 @@
 
 - (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath {
   if (editingStyle == UITableViewCellEditingStyleDelete) {
+    BITFeedbackMessage *message = [strongManager messageAtIndex:indexPath.row];
+    BOOL messageHasAttachments = ([message attachments].count > 0);
+    
     if ([_manager deleteMessageAtIndex:indexPath.row]) {
       if ([_manager numberOfMessages] > 0) {
         [tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationAutomatic];
       } else {
         [tableView reloadData];
+      }
+      
+      if (messageHasAttachments) {
+        [self refreshPreviewItems];
       }
     }
   }
@@ -658,26 +720,26 @@
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
   if (indexPath.section == 0 ) {
-    if ([self.manager isPreiOS7Environment])
+    if ([strongManager isPreiOS7Environment])
       return 87;
     else
       return 44;
   }
   if (indexPath.section >= 2) {
-    if ([self.manager isPreiOS7Environment])
+    if ([strongManager isPreiOS7Environment])
       return 65;
     else
       return 44;
   }
   
-  BITFeedbackMessage *message = [self.manager messageAtIndex:indexPath.row];
+  BITFeedbackMessage *message = [strongManager messageAtIndex:indexPath.row];
   if (!message) return 44;
   
   return [BITFeedbackListViewCell heightForRowWithMessage:message tableViewWidth:self.view.frame.size.width];
 }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
-  if (![self.manager isPreiOS7Environment]) {
+  if (![strongManager isPreiOS7Environment]) {
     if (indexPath.section == 0) {
       [self newFeedbackAction:self];
     } else if (indexPath.section == _userButtonSection) {
@@ -743,7 +805,7 @@
   if (buttonIndex == actionSheet.cancelButtonIndex) {
     return;
   }
-
+  
   if ([actionSheet tag] == 0) {
     if (buttonIndex == [actionSheet destructiveButtonIndex]) {
       [self deleteAllMessages];
@@ -756,6 +818,69 @@
       pasteboard.URL = [NSURL URLWithString:actionSheet.title];
     }
   }
+}
+
+
+#pragma mark - ListViewCellDelegate
+
+- (void)listCell:(id)cell didSelectAttachment:(BITFeedbackMessageAttachment *)attachment {
+  QLPreviewController *previewController = [[QLPreviewController alloc] init];
+  previewController.dataSource = self;
+  
+  [self presentViewController:previewController animated:YES completion:nil];
+  
+  if (self.cachedPreviewItems.count > [self.cachedPreviewItems indexOfObject:attachment]) {
+    [previewController setCurrentPreviewItemIndex:[self.cachedPreviewItems indexOfObject:attachment]];
+  }
+}
+
+- (void)refreshPreviewItems {
+  self.cachedPreviewItems = nil;
+  NSMutableArray *collectedAttachments = [NSMutableArray new];
+  
+  for (int i = 0; i < strongManager.numberOfMessages; i++) {
+    BITFeedbackMessage *message = [strongManager messageAtIndex:i];
+    [collectedAttachments addObjectsFromArray:message.previewableAttachments];
+  }
+  
+  self.cachedPreviewItems = collectedAttachments;
+}
+
+- (NSInteger)numberOfPreviewItemsInPreviewController:(QLPreviewController *)controller {
+  if (!self.cachedPreviewItems){
+    [self refreshPreviewItems];
+  }
+  
+  return self.cachedPreviewItems.count;
+}
+
+- (id <QLPreviewItem>)previewController:(QLPreviewController *)controller previewItemAtIndex:(NSInteger)index {
+  if (index >= 0) {
+    __weak QLPreviewController* blockController = controller;
+    BITFeedbackMessageAttachment *attachment = self.cachedPreviewItems[index];
+    
+    if (attachment.needsLoadingFromURL && !attachment.isLoading) {
+      attachment.isLoading = YES;
+      NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:attachment.sourceURL]];
+      [NSURLConnection sendAsynchronousRequest:request queue:self.thumbnailQueue completionHandler:^(NSURLResponse *response, NSData *responseData, NSError *err) {
+        attachment.isLoading = NO;
+        if (responseData.length) {
+          [attachment replaceData:responseData];
+          [blockController reloadData];
+          
+          [[BITHockeyManager sharedHockeyManager].feedbackManager saveMessages];
+        } else {
+          [blockController reloadData];
+        }
+      }];
+      
+      return attachment;
+    } else {
+      return self.cachedPreviewItems[index];
+    }
+  }
+  
+  return nil;
 }
 
 @end

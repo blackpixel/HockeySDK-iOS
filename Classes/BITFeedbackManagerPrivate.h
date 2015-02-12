@@ -2,7 +2,7 @@
  * Author: Andreas Linde <mail@andreaslinde.de>
  *         Kent Sutherland
  *
- * Copyright (c) 2012-2013 HockeyApp, Bit Stadium GmbH.
+ * Copyright (c) 2012-2014 HockeyApp, Bit Stadium GmbH.
  * Copyright (c) 2011 Andreas Linde & Kent Sutherland.
  * All rights reserved.
  *
@@ -36,6 +36,23 @@
 }
 
 
+///-----------------------------------------------------------------------------
+/// @name Delegate
+///-----------------------------------------------------------------------------
+
+/**
+ Sets the `BITFeedbackManagerDelegate` delegate.
+ 
+ Can be set to be notified when new feedback is received from the server.
+ 
+ The delegate is automatically set by using `[BITHockeyManager setDelegate:]`. You
+ should not need to set this delegate individually.
+ 
+ @see `[BITHockeyManager setDelegate:]`
+ */
+@property (nonatomic, weak) id<BITFeedbackManagerDelegate> delegate;
+
+
 @property (nonatomic, strong) NSMutableArray *feedbackList;
 @property (nonatomic, strong) NSString *token;
 
@@ -56,6 +73,11 @@
 @property (nonatomic, copy) NSString *userEmail;
 
 
+// Fetch user meta data
+- (BOOL)updateUserIDUsingKeychainAndDelegate;
+- (BOOL)updateUserNameUsingKeychainAndDelegate;
+- (BOOL)updateUserEmailUsingKeychainAndDelegate;
+
 // load new messages from the server
 - (void)updateMessagesList;
 
@@ -65,7 +87,7 @@
 - (NSUInteger)numberOfMessages;
 - (BITFeedbackMessage *)messageAtIndex:(NSUInteger)index;
 
-- (void)submitMessageWithText:(NSString *)text;
+- (void)submitMessageWithText:(NSString *)text andAttachments:(NSArray *)photos;
 - (void)submitPendingMessages;
 
 // Returns YES if manual user data can be entered, required or optional

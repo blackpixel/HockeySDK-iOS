@@ -1,4 +1,4 @@
-﻿/*
+/*
  Localization provided by Wordcrafts
  The Mac OS X and iOS localization experts.
  http://www.wordcrafts.de
@@ -212,6 +212,18 @@
 /* Send button */
 "HockeyFeedbackComposeSend" = "Send";
 
+/* Add Image button for attachment actions */
+"HockeyFeedbackComposeAttachmentAddImage" = "Add Image";
+
+/* Edit button for attachment actions */
+"HockeyFeedbackComposeAttachmentEdit" = "Edit Image";
+
+/* Delete button for attachment actions */
+"HockeyFeedbackComposeAttachmentDelete" = "Delete Image";
+
+/* Cancel button for attachment actions */
+"HockeyFeedbackComposeAttachmentCancel" = "Cancel";
+
 
 /* Set User Data */
 
@@ -231,7 +243,7 @@
 "HockeyFeedbackUserDataEmail" = "Email";
 
 /* Email Placeholder */
-"HockeyFeedbackUserDataEmailPlaceholder" = "example@email.com";
+"HockeyFeedbackUserDataEmailPlaceholder" = "email@example.com";
 
 
 /* Authenticator */
@@ -249,14 +261,13 @@
 /* BITAuthenticatorAuthTypeEmail and BITAuthenticatorAuthTypeEmailAndPassword */
 "HockeyAuthenticationViewControllerDataEmailAndPasswordDescription" = "Please enter your HockeyApp account's email address and password to authorize access to this app.";
 "HockeyAuthenticationViewControllerDataEmailDescription" = "Please enter your HockeyApp account's email address to authorize access to this app.";
-"HockeyAuthenticationViewControllerEmailPlaceholder" = "example@email.com";
+"HockeyAuthenticationViewControllerEmailPlaceholder" = "email@example.com";
 "HockeyAuthenticationViewControllerPasswordPlaceholder" = "Required";
 "HockeyAuthenticationViewControllerEmailDescription" = "Email";
 "HockeyAuthenticationViewControllerPasswordDescription" = "Password";
 
 /* Error presented to the user if authentication failed because of networking issues */
 "HockeyAuthenticationViewControllerNetworkError" = "Failed to authorize because your device appears to be disconnected from the Internet. Please try again.";
-
 
 "HockeyAuthenticationFailedAuthenticate" = "Failed to authorize. Please try again or contact the developer of this app.";
 "HockeyAuthenticationNotMember" = "You are not authorized to use this app. Please contact the developer of this app.";

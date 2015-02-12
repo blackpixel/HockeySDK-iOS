@@ -1,7 +1,7 @@
 /*
  * Author: Andreas Linde <mail@andreaslinde.de>
  *
- * Copyright (c) 2012-2013 HockeyApp, Bit Stadium GmbH.
+ * Copyright (c) 2012-2014 HockeyApp, Bit Stadium GmbH.
  * All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person
@@ -31,6 +31,15 @@
 #import "BITFeedbackMessage.h"
 #import "BITAttributedLabel.h"
 
+@class BITFeedbackMessageAttachment;
+
+@protocol BITFeedbackListViewCellDelegate <NSObject>
+
+- (void)listCell:(id)cell didSelectAttachment:(BITFeedbackMessageAttachment *)attachment;
+
+@end
+
+
 /**
  * Cell style depending on the iOS version
  */
@@ -59,6 +68,7 @@ typedef NS_ENUM(NSUInteger, BITFeedbackListViewCellBackgroundStyle) {
   BITFeedbackListViewCellBackgroundStyleAlternate = 1
 };
 
+
 @interface BITFeedbackListViewCell : UITableViewCell
 
 @property (nonatomic, strong) BITFeedbackMessage *message;
@@ -69,6 +79,10 @@ typedef NS_ENUM(NSUInteger, BITFeedbackListViewCellBackgroundStyle) {
 
 @property (nonatomic, strong) BITAttributedLabel *labelText;
 
+@property (nonatomic, weak) id<BITFeedbackListViewCellDelegate> delegate;
+
 + (CGFloat) heightForRowWithMessage:(BITFeedbackMessage *)message tableViewWidth:(CGFloat)width;
+
+- (void)setAttachments:(NSArray *)attachments;
 
 @end

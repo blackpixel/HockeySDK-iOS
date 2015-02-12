@@ -6,7 +6,7 @@
 //
 //
 
-#import <SenTestingKit/SenTestingKit.h>
+#import <XCTest/XCTest.h>
 
 #define HC_SHORTHAND
 #import <OCHamcrestIOS/OCHamcrestIOS.h>
@@ -20,12 +20,12 @@
 #import "BITCrashManagerPrivate.h"
 #import "BITHockeyBaseManager.h"
 #import "BITHockeyBaseManagerPrivate.h"
-#import "BITHockeyManagerPrivate.h"
 
 #import "BITTestHelper.h"
 
+#define kBITCrashMetaAttachment @"BITCrashMetaAttachment"
 
-@interface BITCrashManagerTests : SenTestCase
+@interface BITCrashManagerTests : XCTestCase
 
 @end
 
@@ -72,16 +72,44 @@
   [self startManager];
 }
 
-
 #pragma mark - Setup Tests
 
 - (void)testThatItInstantiates {
-  STAssertNotNil(_sut, @"Should be there");
+  XCTAssertNotNil(_sut, @"Should be there");
 }
 
 
 #pragma mark - Persistence tests
 
+- (void)testPersistUserProvidedMetaData {
+  NSString *tempCrashName = @"tempCrash";
+  [_sut setLastCrashFilename:tempCrashName];
+  
+  BITCrashMetaData *metaData = [BITCrashMetaData new];
+  [metaData setUserDescription:@"Test string"];
+  [_sut persistUserProvidedMetaData:metaData];
+  
+  NSError *error;
+  NSString *description = [NSString stringWithContentsOfFile:[NSString stringWithFormat:@"%@.desc", [[_sut crashesDir] stringByAppendingPathComponent: tempCrashName]] encoding:NSUTF8StringEncoding error:&error];
+  assertThat(description, equalTo(@"Test string"));
+}
+
+- (void)testPersistAttachment {
+  NSString *filename = @"TestAttachment";
+  NSData *data = [[NSData alloc] initWithBase64Encoding:@"TestData"];
+  NSString* type = @"text/plain";
+  
+  BITHockeyAttachment *originalAttachment = [[BITHockeyAttachment alloc] initWithFilename:filename hockeyAttachmentData:data contentType:type];
+  NSString *attachmentFilename = [[_sut crashesDir] stringByAppendingPathComponent:@"testAttachment"];
+  
+  [_sut persistAttachment:originalAttachment withFilename:attachmentFilename];
+  
+  BITHockeyAttachment *decodedAttachment = [_sut attachmentForCrashReport:attachmentFilename];
+  
+  assertThat(decodedAttachment.filename, equalTo(filename));
+  assertThat(decodedAttachment.hockeyAttachmentData, equalTo(data));
+  assertThat(decodedAttachment.contentType, equalTo(type));
+}
 
 #pragma mark - Helper
 
@@ -124,6 +152,44 @@
   [verifyCount(delegateMock, times(1)) userEmailForHockeyManager:hm componentManager:_sut];
 }
 
+#pragma mark - Handle User Input
+
+- (void)testHandleUserInputDontSend {
+  id <BITCrashManagerDelegate> delegateMock = mockProtocol(@protocol(BITCrashManagerDelegate));
+  _sut.delegate = delegateMock;
+  
+  assertThatBool([_sut handleUserInput:BITCrashManagerUserInputDontSend withUserProvidedMetaData:nil], equalToBool(YES));
+  
+  [verify(delegateMock) crashManagerWillCancelSendingCrashReport:_sut];
+  
+}
+
+- (void)testHandleUserInputSend {
+  assertThatBool([_sut handleUserInput:BITCrashManagerUserInputSend withUserProvidedMetaData:nil], equalToBool(YES));
+}
+
+- (void)testHandleUserInputAlwaysSend {
+  id <BITCrashManagerDelegate> delegateMock = mockProtocol(@protocol(BITCrashManagerDelegate));
+  _sut.delegate = delegateMock;
+  NSUserDefaults *mockUserDefaults = mock([NSUserDefaults class]);
+  
+  //Test if CrashManagerStatus is unset
+  [given([mockUserDefaults integerForKey:@"BITCrashManagerStatus"]) willReturn:nil];
+  
+  //Test if method runs through
+  assertThatBool([_sut handleUserInput:BITCrashManagerUserInputAlwaysSend withUserProvidedMetaData:nil], equalToBool(YES));
+  
+  //Test if correct CrashManagerStatus is now set
+  [given([mockUserDefaults integerForKey:@"BITCrashManagerStauts"]) willReturnInt:BITCrashManagerStatusAutoSend];
+  
+  //Verify that delegate method has been called
+  [verify(delegateMock) crashManagerWillSendCrashReportsAlways:_sut];
+  
+}
+
+- (void)testHandleUserInputWithInvalidInput {
+  assertThatBool([_sut handleUserInput:3 withUserProvidedMetaData:nil], equalToBool(NO));
+}
 
 #pragma mark - Debugger
 
@@ -143,9 +209,9 @@
   assertThatBool([_sut hasPendingCrashReport], equalToBool(NO));
 }
 
-- (void)testHasNonApprovedCrashReportsWithNoFiles {
+- (void)testFirstNotApprovedCrashReportWithNoFiles {
   _sut.crashManagerStatus = BITCrashManagerStatusAutoSend;
-  assertThatBool([_sut hasNonApprovedCrashReports], equalToBool(NO));
+  assertThat([_sut firstNotApprovedCrashReport], equalTo(nil));
 }
 
 
@@ -181,7 +247,7 @@
   
   // No files at startup
   assertThatBool([_sut hasPendingCrashReport], equalToBool(NO));
-  assertThatBool([_sut hasNonApprovedCrashReports], equalToBool(NO));
+  assertThat([_sut firstNotApprovedCrashReport], equalTo(nil));
   
   [_sut invokeDelayedProcessing];
   
@@ -192,7 +258,7 @@
   
   // we should have 0 pending crash report
   assertThatBool([_sut hasPendingCrashReport], equalToBool(NO));
-  assertThatBool([_sut hasNonApprovedCrashReports], equalToBool(NO));
+  assertThat([_sut firstNotApprovedCrashReport], equalTo(nil));
   
   [_sut cleanCrashReports];
   
@@ -202,13 +268,14 @@
   [_sut handleCrashReport];
   
   [verifyCount(delegateMock, times(1)) applicationLogForCrashManager:_sut];
+  [verifyCount(delegateMock, times(1)) attachmentForCrashManager:_sut];
   
   // we should have now 1 pending crash report
   assertThatBool([_sut hasPendingCrashReport], equalToBool(YES));
-  assertThatBool([_sut hasNonApprovedCrashReports], equalToBool(YES));
+  assertThat([_sut firstNotApprovedCrashReport], notNilValue());
   
   // this is currently sending blindly, needs refactoring to test properly
-  [_sut sendCrashReports];
+  [_sut sendNextCrashReport];
   [verifyCount(delegateMock, times(1)) crashManagerWillSendCrashReport:_sut];
   
   [_sut cleanCrashReports];
@@ -220,7 +287,7 @@
   
   // we should have now 1 pending crash report
   assertThatBool([_sut hasPendingCrashReport], equalToBool(YES));
-  assertThatBool([_sut hasNonApprovedCrashReports], equalToBool(YES));
+  assertThat([_sut firstNotApprovedCrashReport], notNilValue());
   
   [_sut cleanCrashReports];
 }

@@ -1,7 +1,7 @@
 /*
  * Author: Andreas Linde <mail@andreaslinde.de>
  *
- * Copyright (c) 2012-2013 HockeyApp, Bit Stadium GmbH.
+ * Copyright (c) 2012-2014 HockeyApp, Bit Stadium GmbH.
  * All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person
@@ -34,6 +34,8 @@ NSString *bit_URLEncodedString(NSString *inputString);
 NSString *bit_URLDecodedString(NSString *inputString);
 NSString *bit_base64String(NSData * data, unsigned long length);
 
+NSString *bit_settingsDir(void);
+
 BOOL bit_validateEmail(NSString *email);
 NSString *bit_keychainHockeySDKServiceName(void);
 
@@ -44,6 +46,12 @@ NSString *bit_appName(NSString *placeHolderString);
 NSString *bit_UUIDPreiOS6(void);
 NSString *bit_UUID(void);
 NSString *bit_appAnonID(void);
+BOOL bit_isPreiOS7Environment(void);
+BOOL bit_isPreiOS8Environment(void);
+BOOL bit_isRunningInAppExtension(void);
+
+NSString *bit_validAppIconStringFromIcons(NSBundle *resourceBundle, NSArray *icons);
+NSString *bit_validAppIconFilename(NSBundle *bundle, NSBundle *resourceBundle);
 
 /* UIImage helpers */
 UIImage *bit_roundedCornerImage(UIImage *inputImage, CGFloat cornerSize, CGFloat borderSize);

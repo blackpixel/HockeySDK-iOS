@@ -1,7 +1,7 @@
 /*
  * Author: Andreas Linde <mail@andreaslinde.de>
  *
- * Copyright (c) 2013 HockeyApp, Bit Stadium GmbH.
+ * Copyright (c) 2013-2014 HockeyApp, Bit Stadium GmbH.
  * All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person
@@ -33,12 +33,42 @@
 
 #import <CrashReporter/CrashReporter.h>
 
+@class BITHockeyAppClient;
+
 @interface BITCrashManager () {
 }
 
+
+///-----------------------------------------------------------------------------
+/// @name Delegate
+///-----------------------------------------------------------------------------
+
+/**
+ Sets the optional `BITCrashManagerDelegate` delegate.
+ 
+ The delegate is automatically set by using `[BITHockeyManager setDelegate:]`. You
+ should not need to set this delegate individually.
+ 
+ @see `[BITHockeyManager setDelegate:]`
+ */
+@property (nonatomic, weak) id delegate;
+
+/**
+ * must be set
+ */
+@property (nonatomic, strong) BITHockeyAppClient *hockeyAppClient;
+
 @property (nonatomic) NSUncaughtExceptionHandler *exceptionHandler;
 
+@property (nonatomic, strong) NSFileManager *fileManager;
+
 @property (nonatomic, strong) BITPLCrashReporter *plCrashReporter;
+
+@property (nonatomic) NSString *lastCrashFilename;
+
+@property (nonatomic, copy, setter = setAlertViewHandler:) BITCustomAlertViewHandler alertViewHandler;
+
+@property (nonatomic, strong) NSString *crashesDir;
 
 #if HOCKEYSDK_FEATURE_AUTHENTICATOR
 
@@ -61,10 +91,17 @@
 
 - (void)handleCrashReport;
 - (BOOL)hasPendingCrashReport;
-- (BOOL)hasNonApprovedCrashReports;
+- (NSString *)firstNotApprovedCrashReport;
+
+- (void)persistUserProvidedMetaData:(BITCrashMetaData *)userProvidedMetaData;
+- (void)persistAttachment:(BITHockeyAttachment *)attachment withFilename:(NSString *)filename;
+
+- (BITHockeyAttachment *)attachmentForCrashReport:(NSString *)filename;
 
 - (void)invokeDelayedProcessing;
-- (void)sendCrashReports;
+- (void)sendNextCrashReport;
+
+- (void)setLastCrashFilename:(NSString *)lastCrashFilename;
 
 @end
 

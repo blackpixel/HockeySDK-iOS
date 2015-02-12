@@ -6,7 +6,7 @@
 //
 //
 
-#import <SenTestingKit/SenTestingKit.h>
+#import <XCTest/XCTest.h>
 
 #define HC_SHORTHAND
 #import <OCHamcrestIOS/OCHamcrestIOS.h>
@@ -33,7 +33,7 @@
 @end
 @implementation MyDeviceWithIdentifierForVendor
 
-- (id)init {
+- (instancetype)init {
   self = [super init];
   if( self ) {
     _identifierForVendor = [NSUUID UUID];
@@ -45,7 +45,7 @@
 
 static void *kInstallationIdentification = &kInstallationIdentification;
 
-@interface BITAuthenticatorTests : SenTestCase
+@interface BITAuthenticatorTests : XCTestCase
 @end
 
 @implementation BITAuthenticatorTests {
@@ -77,14 +77,14 @@ static void *kInstallationIdentification = &kInstallationIdentification;
   
   NSData *data = [dataString dataUsingEncoding:NSUTF8StringEncoding];
   NSError *error = nil;
-  NSDictionary *json = (NSDictionary *)[NSJSONSerialization JSONObjectWithData:data options:kNilOptions error:&error];
+  NSDictionary *json = (NSDictionary *)[NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
   
   return json;
 }
 
 #pragma mark - Setup Tests
 - (void) testThatItInstantiates {
-  STAssertNotNil(_sut, @"Should be there");
+  XCTAssertNotNil(_sut, @"Should be there");
 }
 
 #pragma mark - Persistence Tests
@@ -105,7 +105,6 @@ static void *kInstallationIdentification = &kInstallationIdentification;
 
 #pragma mark - Initial defaults
 - (void) testDefaultValues {
-  assertThatBool(_sut.automaticMode, equalToBool(YES));
   assertThatBool(_sut.restrictApplicationUsage, equalToBool(NO));
   assertThatBool(_sut.isIdentified, equalToBool(NO));
   assertThatBool(_sut.isValidated, equalToBool(NO));
@@ -259,7 +258,7 @@ static void *kInstallationIdentification = &kInstallationIdentification;
   _sut.identificationType = BITAuthenticatorIdentificationTypeHockeyAppUser;
   [_sut validateWithCompletion:^(BOOL validated, NSError *error) {
     assertThatBool(validated, equalToBool(NO));
-    assertThatInt(error.code, equalToInt(BITAuthenticatorNotIdentified));
+    assertThatLong(error.code, equalToLong(BITAuthenticatorNotIdentified));
   }];
 }
 
@@ -301,16 +300,6 @@ static void *kInstallationIdentification = &kInstallationIdentification;
 }
 
 #pragma mark - Lifetime checks
-- (void) testThatAuthenticationTriggersOnStart {
-  id delegateMock = mockProtocol(@protocol(BITAuthenticatorDelegate));
-  _sut.delegate = delegateMock;
-  _sut.identificationType = BITAuthenticatorIdentificationTypeDevice;
-  
-  [_sut startManager];
-  
-  [verify(delegateMock) authenticator:_sut willShowAuthenticationController:(id)anything()];
-}
-
 - (void) testThatValidationTriggersOnDidBecomeActive {
   id delegateMock = mockProtocol(@protocol(BITAuthenticatorDelegate));
   _sut.delegate = delegateMock;

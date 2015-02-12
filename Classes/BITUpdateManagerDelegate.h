@@ -1,7 +1,7 @@
 /*
  * Author: Andreas Linde <mail@andreaslinde.de>
  *
- * Copyright (c) 2012-2013 HockeyApp, Bit Stadium GmbH.
+ * Copyright (c) 2012-2014 HockeyApp, Bit Stadium GmbH.
  * All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person
@@ -104,6 +104,22 @@
  @warning When setting this to `NO`, you will _NOT_ know if this user is actually testing!
  */
 - (BOOL)updateManagerShouldSendUsageData:(BITUpdateManager *)updateManager;
+
+
+///-----------------------------------------------------------------------------
+/// @name Privacy
+///-----------------------------------------------------------------------------
+
+/**
+ Invoked right before the app will exit to allow app update to start (>= iOS8 only)
+ 
+ The iOS installation mechanism only starts if the app the should be updated is currently
+ not running. On all iOS versions up to iOS 7, the system did automatically exit the app
+ in these cases. Since iOS 8 this isn't done any longer.
+ 
+ @param updateManager The `BITUpdateManager` instance invoking this delegate
+ */
+- (void)updateManagerWillExitApp:(BITUpdateManager *)updateManager;
 
 
 #pragma mark - Deprecated

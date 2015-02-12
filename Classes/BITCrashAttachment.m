@@ -1,7 +1,7 @@
 /*
  * Author: Andreas Linde <mail@andreaslinde.de>
  *
- * Copyright (c) 2012-2013 HockeyApp, Bit Stadium GmbH.
+ * Copyright (c) 2014 HockeyApp, Bit Stadium GmbH.
  * All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person
@@ -26,12 +26,17 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#import <Foundation/Foundation.h>
+#import "BITCrashAttachment.h"
 
+@implementation BITCrashAttachment
 
-@interface BITHockeyManager () {
+- (instancetype)initWithFilename:(NSString *)filename
+             crashAttachmentData:(NSData *)crashAttachmentData
+                     contentType:(NSString *)contentType
+{
+  self = [super initWithFilename:filename hockeyAttachmentData:crashAttachmentData contentType:contentType];
+  
+  return self;
 }
-
-@property (nonatomic, weak) id delegate;
 
 @end

@@ -212,6 +212,18 @@
 /* Send button */
 "HockeyFeedbackComposeSend" = "Šalji";
 
+/* Add Image button for attachment actions */
+"HockeyFeedbackComposeAttachmentAddImage" = "Add Image";
+
+/* Edit button for attachment actions */
+"HockeyFeedbackComposeAttachmentEdit" = "Edit Image";
+
+/* Delete button for attachment actions */
+"HockeyFeedbackComposeAttachmentDelete" = "Delete Image";
+
+/* Cancel button for attachment actions */
+"HockeyFeedbackComposeAttachmentCancel" = "Prekid";
+
 
 /* Set User Data */
 
@@ -231,7 +243,7 @@
 "HockeyFeedbackUserDataEmail" = "E-mail";
 
 /* Email Placeholder */
-"HockeyFeedbackUserDataEmailPlaceholder" = "primjer@email.com";
+"HockeyFeedbackUserDataEmailPlaceholder" = "email@primjer.com";
 
 
 /* Authenticator */
@@ -249,7 +261,7 @@
 /* BITAuthenticatorAuthTypeEmail and BITAuthenticatorAuthTypeEmailAndPassword */
 "HockeyAuthenticationViewControllerDataEmailAndPasswordDescription" = "Unesite molimo Vas e-mail adresu i lozinku Vašeg HockeyApp računa kako biste autorizirali pristup ovoj aplikaciji.";
 "HockeyAuthenticationViewControllerDataEmailDescription" = "Molimo Vas unesite e-mail adresu Vašeg HockeyApp računa za autorizaciju pristupa aplikaciji.";
-"HockeyAuthenticationViewControllerEmailPlaceholder" = "primjer@email.com";
+"HockeyAuthenticationViewControllerEmailPlaceholder" = "email@primjer.com";
 "HockeyAuthenticationViewControllerPasswordPlaceholder" = "Obavezno";
 "HockeyAuthenticationViewControllerEmailDescription" = "E-mail";
 "HockeyAuthenticationViewControllerPasswordDescription" = "Lozinka";

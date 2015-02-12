@@ -2,7 +2,7 @@
  * Author: Andreas Linde <mail@andreaslinde.de>
  *         Peter Steinberger
  *
- * Copyright (c) 2012-2013 HockeyApp, Bit Stadium GmbH.
+ * Copyright (c) 2012-2014 HockeyApp, Bit Stadium GmbH.
  * Copyright (c) 2011-2012 Peter Steinberger.
  * All rights reserved.
  *
@@ -71,8 +71,8 @@ typedef NS_ENUM(NSUInteger, BITStoreButtonStyle) {
 // The interface is flexible, so there is now fixed order
 @interface BITStoreButton : UIButton
 
-- (id)initWithFrame:(CGRect)frame;
-- (id)initWithPadding:(CGPoint)padding style:(BITStoreButtonStyle)style;
+- (instancetype)initWithFrame:(CGRect)frame;
+- (instancetype)initWithPadding:(CGPoint)padding style:(BITStoreButtonStyle)style;
 
 // action delegate
 @property (nonatomic, weak) id<BITStoreButtonDelegate> buttonDelegate;

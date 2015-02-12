@@ -1,7 +1,7 @@
 /*
  * Author: Andreas Linde <mail@andreaslinde.de>
  *
- * Copyright (c) 2012-2013 HockeyApp, Bit Stadium GmbH.
+ * Copyright (c) 2012-2014 HockeyApp, Bit Stadium GmbH.
  * All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person
@@ -33,15 +33,15 @@
 
 #import "BITHockeyBaseManager.h"
 #import "BITHockeyBaseManagerPrivate.h"
+#if HOCKEYSDK_FEATURE_AUTHENTICATOR || HOCKEYSDK_FEATURE_UPDATES || HOCKEYSDK_FEATURE_FEEDBACK
 #import "BITHockeyBaseViewController.h"
+#endif
 
-#import "BITHockeyManagerPrivate.h"
 #import "BITKeychainUtils.h"
 
 #import <sys/sysctl.h>
-#if !TARGET_IPHONE_SIMULATOR
-#import <mach-o/ldsyms.h>
-#endif
+#import <mach-o/dyld.h>
+#import <mach-o/loader.h>
 
 #ifndef __IPHONE_6_1
 #define __IPHONE_6_1     60100
@@ -56,7 +56,7 @@
 }
 
 
-- (id)init {
+- (instancetype)init {
   if ((self = [super init])) {
     _serverURL = BITHOCKEYSDK_URL;
 
@@ -77,7 +77,7 @@
   return self;
 }
 
-- (id)initWithAppIdentifier:(NSString *)appIdentifier isAppStoreEnvironment:(BOOL)isAppStoreEnvironment {
+- (instancetype)initWithAppIdentifier:(NSString *)appIdentifier isAppStoreEnvironment:(BOOL)isAppStoreEnvironment {
   if ((self = [self init])) {
     _appIdentifier = appIdentifier;
     _isAppStoreEnvironment = isAppStoreEnvironment;
@@ -101,25 +101,7 @@
 }
 
 - (BOOL)isPreiOS7Environment {
-  static BOOL isPreiOS7Environment = YES;
-  static dispatch_once_t checkOS;
-  
-  dispatch_once(&checkOS, ^{
-    // we only perform this runtime check if this is build against at least iOS7 base SDK
-#if __IPHONE_OS_VERSION_MAX_ALLOWED > __IPHONE_6_1
-    // runtime check according to
-    // https://developer.apple.com/library/prerelease/ios/documentation/UserExperience/Conceptual/TransitionGuide/SupportingEarlieriOS.html
-    if (floor(NSFoundationVersionNumber) <= NSFoundationVersionNumber_iOS_6_1) {
-      isPreiOS7Environment = YES;
-    } else {
-      isPreiOS7Environment = NO;
-    }
-#else
-    isPreiOS7Environment = YES;
-#endif
-  });
-  
-  return isPreiOS7Environment;
+  return bit_isPreiOS7Environment();
 }
 
 - (NSString *)getDevicePlatform {
@@ -135,34 +117,44 @@
 }
 
 - (NSString *)executableUUID {
-  // This now requires the testing of this feature to be done on an actual device, since it returns always empty strings on the simulator
-  // Once there is a better solution to get unit test targets build without problems this should be changed again, so testing of this
-  // feature is also possible using the simulator
-  // See: http://support.hockeyapp.net/discussions/problems/2306-integrating-hockeyapp-with-test-bundle-target-i386-issues
-  //      http://support.hockeyapp.net/discussions/problems/4113-linking-hockeysdk-to-test-bundle-target
-#if !TARGET_IPHONE_SIMULATOR
-  const uint8_t *command = (const uint8_t *)(&_mh_execute_header + 1);
-  for (uint32_t idx = 0; idx < _mh_execute_header.ncmds; ++idx) {
-    const struct load_command *load_command = (const struct load_command *)command;
-    if (load_command->cmd == LC_UUID) {
-      const struct uuid_command *uuid_command = (const struct uuid_command *)command;
-      const uint8_t *uuid = uuid_command->uuid;
+  const struct mach_header *executableHeader = NULL;
+  for (uint32_t i = 0; i < _dyld_image_count(); i++) {
+    const struct mach_header *header = _dyld_get_image_header(i);
+    if (header->filetype == MH_EXECUTE) {
+      executableHeader = header;
+      break;
+    }
+  }
+  
+  if (!executableHeader)
+    return @"";
+  
+  BOOL is64bit = executableHeader->magic == MH_MAGIC_64 || executableHeader->magic == MH_CIGAM_64;
+  uintptr_t cursor = (uintptr_t)executableHeader + (is64bit ? sizeof(struct mach_header_64) : sizeof(struct mach_header));
+  const struct segment_command *segmentCommand = NULL;
+  for (uint32_t i = 0; i < executableHeader->ncmds; i++, cursor += segmentCommand->cmdsize) {
+    segmentCommand = (struct segment_command *)cursor;
+    if (segmentCommand->cmd == LC_UUID) {
+      const struct uuid_command *uuidCommand = (const struct uuid_command *)segmentCommand;
+      const uint8_t *uuid = uuidCommand->uuid;
       return [[NSString stringWithFormat:@"%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X",
                uuid[0], uuid[1], uuid[2], uuid[3],
                uuid[4], uuid[5], uuid[6], uuid[7],
                uuid[8], uuid[9], uuid[10], uuid[11],
                uuid[12], uuid[13], uuid[14], uuid[15]]
               lowercaseString];
-    } else {
-      command += load_command->cmdsize;
     }
   }
-#endif
+  
   return @"";
 }
 
 - (UIWindow *)findVisibleWindow {
-  UIWindow *visibleWindow = nil;
+  UIWindow *visibleWindow = [UIApplication sharedApplication].keyWindow;
+  
+  if (!(visibleWindow.hidden)) {
+    return visibleWindow;
+  }
   
   // if the rootViewController property (available >= iOS 4.0) of the main window is set, we present the modal view controller on top of the rootViewController
   NSArray *windows = [[UIApplication sharedApplication] windows];
@@ -171,7 +163,7 @@
       visibleWindow = window;
     }
     if ([UIWindow instancesRespondToSelector:@selector(rootViewController)]) {
-      if ([window rootViewController]) {
+      if (!(window.hidden) && ([window rootViewController])) {
         visibleWindow = window;
         BITHockeyLog(@"INFO: UIWindow with rootViewController found: %@", visibleWindow);
         break;
@@ -193,16 +185,27 @@
 - (UINavigationController *)customNavigationControllerWithRootViewController:(UIViewController *)viewController presentationStyle:(UIModalPresentationStyle)modalPresentationStyle {
   UINavigationController *navController = [[UINavigationController alloc] initWithRootViewController:viewController];
   navController.navigationBar.barStyle = self.barStyle;
-  if (self.navigationBarTintColor)
+  if (self.navigationBarTintColor) {
     navController.navigationBar.tintColor = self.navigationBarTintColor;
+  } else {
+    // in case of iOS 7 we overwrite the tint color on the navigation bar
+    if (![self isPreiOS7Environment]) {
+      if ([UIWindow instancesRespondToSelector:NSSelectorFromString(@"tintColor")]) {
+        [navController.navigationBar setTintColor:BIT_RGBCOLOR(0, 122, 255)];
+      }
+    }
+  }
   navController.modalPresentationStyle = self.modalPresentationStyle;
   
   return navController;
 }
 
 - (void)showView:(UIViewController *)viewController {
+  // if we compile Crash only, then BITHockeyBaseViewController is not included
+  // in the headers and will cause a warning with the modulemap file
+#if HOCKEYSDK_FEATURE_AUTHENTICATOR || HOCKEYSDK_FEATURE_UPDATES || HOCKEYSDK_FEATURE_FEEDBACK
   UIViewController *parentViewController = nil;
-  
+    
   if ([[BITHockeyManager sharedHockeyManager].delegate respondsToSelector:@selector(viewControllerForHockeyManager:componentManager:)]) {
     parentViewController = [[BITHockeyManager sharedHockeyManager].delegate viewControllerForHockeyManager:[BITHockeyManager sharedHockeyManager] componentManager:self];
   }
@@ -261,6 +264,7 @@
       [(BITHockeyBaseViewController *)viewController setModalAnimated:NO];
     [visibleWindow addSubview:_navController.view];
   }
+#endif
 }
 
 - (BOOL)addStringValueToKeychain:(NSString *)stringValue forKey:(NSString *)key {
@@ -284,7 +288,7 @@
                              andPassword:stringValue
                           forServiceName:bit_keychainHockeySDKServiceName()
                           updateExisting:YES
-                           accessibility:kSecAttrAccessibleWhenUnlockedThisDeviceOnly
+                           accessibility:kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
                                    error:&error];
 }
 

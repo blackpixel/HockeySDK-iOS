@@ -6,7 +6,7 @@
  *
  * Copyright (c) 2008-2013 Plausible Labs Cooperative, Inc.
  * Copyright (c) 2010 MOSO Corporation, Pty Ltd.
- * Copyright (c) 2012-2013 HockeyApp, Bit Stadium GmbH.
+ * Copyright (c) 2012-2014 HockeyApp, Bit Stadium GmbH.
  * All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person
@@ -44,10 +44,31 @@
 #endif
 
 
+/**
+ *  HockeySDK Crash Reporter error domain
+ */
+typedef NS_ENUM (NSInteger, BITBinaryImageType) {
+  /**
+   *  App binary
+   */
+  BITBinaryImageTypeAppBinary,
+  /**
+   *  App provided framework
+   */
+  BITBinaryImageTypeAppFramework,
+  /**
+   *  Image not related to the app
+   */
+  BITBinaryImageTypeOther
+};
+
+
 @interface BITCrashReportTextFormatter : NSObject {
 }
 
 + (NSString *)stringValueForCrashReport:(PLCrashReport *)report crashReporterKey:(NSString *)crashReporterKey;
 + (NSArray *)arrayOfAppUUIDsForCrashReport:(PLCrashReport *)report;
++ (NSString *)bit_archNameFromCPUType:(uint64_t)cpuType subType:(uint64_t)subType;
++ (BITBinaryImageType)bit_imageTypeForImagePath:(NSString *)imagePath processPath:(NSString *)processPath;
 
 @end

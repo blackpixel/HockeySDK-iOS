@@ -212,6 +212,18 @@
 /* Send button */
 "HockeyFeedbackComposeSend" = "Senden";
 
+/* Add Image button for attachment actions */
+"HockeyFeedbackComposeAttachmentAddImage" = "Bild hinzufügen";
+
+/* Edit button for attachment actions */
+"HockeyFeedbackComposeAttachmentEdit" = "Bild bearbeiten";
+
+/* Delete button for attachment actions */
+"HockeyFeedbackComposeAttachmentDelete" = "Bild löschen";
+
+/* Cancel button for attachment actions */
+"HockeyFeedbackComposeAttachmentCancel" = "Abbrechen";
+
 
 /* Set User Data */
 
@@ -222,7 +234,7 @@
 "HockeyFeedbackUserDataDescription" = "Bitte geben Sie vor Verfassen Ihres Feedbacks Ihre Daten ein.";
 
 /* Name Field */
-"HockeyFeedbackUserDataName" = "Name";
+"HockeyFeedbackUserDataName" = "Max Mustermann";
 
 /* Name Placeholder */
 "HockeyFeedbackUserDataNamePlaceHolder" = "Max Mustermann";
@@ -231,7 +243,7 @@
 "HockeyFeedbackUserDataEmail" = "E-Mail";
 
 /* Email Placeholder */
-"HockeyFeedbackUserDataEmailPlaceholder" = "beispiel@email.de";
+"HockeyFeedbackUserDataEmailPlaceholder" = "email@beispiel.de";
 
 
 /* Authenticator */
@@ -249,14 +261,13 @@
 /* BITAuthenticatorAuthTypeEmail and BITAuthenticatorAuthTypeEmailAndPassword */
 "HockeyAuthenticationViewControllerDataEmailAndPasswordDescription" = "Geben Sie die E-Mail-Adresse und das Kennwort Ihres HockeyApp-Accounts ein, um Zugriff auf diese App zu erhalten.";
 "HockeyAuthenticationViewControllerDataEmailDescription" = "Geben Sie die E-Mail-Adresse Ihres HockeyApp-Accounts ein, um Zugriff auf diese App zu erhalten.";
-"HockeyAuthenticationViewControllerEmailPlaceholder" = "beispiel@email.de";
+"HockeyAuthenticationViewControllerEmailPlaceholder" = "email@beispiel.de";
 "HockeyAuthenticationViewControllerPasswordPlaceholder" = "Erforderlich";
 "HockeyAuthenticationViewControllerEmailDescription" = "E-Mail";
 "HockeyAuthenticationViewControllerPasswordDescription" = "Kennwort";
 
 /* Error presented to the user if authentication failed because of networking issues */
 "HockeyAuthenticationViewControllerNetworkError" = "Die Autorisierung ist fehlgeschlagen, da Ihr Gerät anscheinend nicht mit dem Internet verbunden ist. Bitte erneut versuchen.";
-
 
 "HockeyAuthenticationFailedAuthenticate" = "Autorisierung fehlgeschlagen. Bitte erneut versuchen oder an den Entwickler dieser App wenden.";
 "HockeyAuthenticationNotMember" = "Sie sind nicht berechtigt, diese App zu nutzen. Bitte wenden Sie sich an den Entwickler dieser App.";

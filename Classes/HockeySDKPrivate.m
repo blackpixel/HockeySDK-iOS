@@ -1,7 +1,7 @@
 /*
  * Author: Andreas Linde <mail@andreaslinde.de>
  *
- * Copyright (c) 2012-2013 HockeyApp, Bit Stadium GmbH.
+ * Copyright (c) 2012-2014 HockeyApp, Bit Stadium GmbH.
  * Copyright (c) 2011 Andreas Linde.
  * All rights reserved.
  *
@@ -42,7 +42,7 @@ NSBundle *BITHockeyBundle(void) {
   static NSBundle *bundle = nil;
   static dispatch_once_t predicate;
   dispatch_once(&predicate, ^{
-    NSString* mainBundlePath = [[NSBundle mainBundle] resourcePath];
+    NSString* mainBundlePath = [[NSBundle bundleForClass:[BITHockeyManager class]] resourcePath];
     NSString* frameworkBundlePath = [mainBundlePath stringByAppendingPathComponent:BITHOCKEYSDK_BUNDLE];
     bundle = [NSBundle bundleWithPath:frameworkBundlePath];
   });
@@ -50,11 +50,16 @@ NSBundle *BITHockeyBundle(void) {
 }
 
 NSString *BITHockeyLocalizedString(NSString *stringToken) {
+  if (!stringToken) return @"";
+  
   NSString *appSpecificLocalizationString = NSLocalizedString(stringToken, @"");
   if (appSpecificLocalizationString && ![stringToken isEqualToString:appSpecificLocalizationString]) {
     return appSpecificLocalizationString;
   } else if (BITHockeyBundle()) {
-    return NSLocalizedStringFromTableInBundle(stringToken, @"HockeySDK", BITHockeyBundle(), @"");
+    NSString *bundleSpecificLocalizationString = NSLocalizedStringFromTableInBundle(stringToken, @"HockeySDK", BITHockeyBundle(), @"");
+    if (bundleSpecificLocalizationString)
+      return bundleSpecificLocalizationString;
+    return stringToken;
   } else {
     return stringToken;
   }

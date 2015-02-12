@@ -2,7 +2,7 @@
  * Author: Andreas Linde <mail@andreaslinde.de>
  *         Peter Steinberger
  *
- * Copyright (c) 2012-2013 HockeyApp, Bit Stadium GmbH.
+ * Copyright (c) 2012-2014 HockeyApp, Bit Stadium GmbH.
  * Copyright (c) 2011 Andreas Linde.
  * All rights reserved.
  *
@@ -33,6 +33,16 @@
 
 @interface BITStoreUpdateManager () <UIAlertViewDelegate> {
 }
+
+///-----------------------------------------------------------------------------
+/// @name Delegate
+///-----------------------------------------------------------------------------
+
+/**
+ Sets the optional `BITStoreUpdateManagerDelegate` delegate.
+ */
+@property (nonatomic, weak) id delegate;
+
 
 // is an update available?
 @property (nonatomic, assign, getter=isUpdateAvailable) BOOL updateAvailable;

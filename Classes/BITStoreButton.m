@@ -2,7 +2,7 @@
  * Author: Andreas Linde <mail@andreaslinde.de>
  *         Peter Steinberger
  *
- * Copyright (c) 2012-2013 HockeyApp, Bit Stadium GmbH.
+ * Copyright (c) 2012-2014 HockeyApp, Bit Stadium GmbH.
  * Copyright (c) 2011-2012 Peter Steinberger.
  * All rights reserved.
  *
@@ -43,7 +43,7 @@
 
 #pragma mark - NSObject
 
-- (id)initWithLabel:(NSString*)aLabel enabled:(BOOL)flag {
+- (instancetype)initWithLabel:(NSString*)aLabel enabled:(BOOL)flag {
   if ((self = [super init])) {
     self.label = aLabel;
     self.enabled = flag;
@@ -152,7 +152,7 @@
 
 #pragma mark - NSObject
 
-- (id)initWithFrame:(CGRect)frame {
+- (instancetype)initWithFrame:(CGRect)frame {
   if ((self = [super initWithFrame:frame])) {
 		self.layer.needsDisplayOnBoundsChange = YES;
     
@@ -167,7 +167,7 @@
   return self;
 }
 
-- (id)initWithPadding:(CGPoint)padding style:(BITStoreButtonStyle)style {
+- (instancetype)initWithPadding:(CGPoint)padding style:(BITStoreButtonStyle)style {
   CGRect frame = CGRectMake(0, 0, 40, BIT_MIN_HEIGHT);
   if ((self = [self initWithFrame:frame])) {
     _customPadding = padding;
