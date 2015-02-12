@@ -186,13 +186,15 @@ typedef NS_ENUM(NSInteger, BITImageAnnotationViewControllerInteractionMode) {
 #pragma mark - Actions
 
 - (void)discard:(id)sender {
-  [self.delegate annotationControllerDidCancel:self];
+  typeof(self.delegate) strongDelegate = self.delegate;
+  [strongDelegate annotationControllerDidCancel:self];
   [self dismissViewControllerAnimated:YES completion:nil];
 }
 
 - (void)save:(id)sender {
   UIImage *image = [self extractImage];
-  [self.delegate annotationController:self didFinishWithImage:image];
+  typeof(self.delegate) strongDelegate = self.delegate;
+  [strongDelegate annotationController:self didFinishWithImage:image];
   [self dismissViewControllerAnimated:YES completion:nil];
 }
 

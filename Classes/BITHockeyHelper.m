@@ -287,8 +287,8 @@ NSString *bit_validAppIconStringFromIcons(NSBundle *resourceBundle, NSArray *ico
   if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) useiPadIcon = YES;
   
   NSString *currentBestMatch = nil;
-  float currentBestMatchHeight = 0;
-  float bestMatchHeight = 0;
+  CGFloat currentBestMatchHeight = 0;
+  CGFloat bestMatchHeight = 0;
 
   if (bit_isPreiOS7Environment()) {
     bestMatchHeight = useiPadIcon ? (useHighResIcon ? 144 : 72) : (useHighResIcon ? 114 : 57);
@@ -504,7 +504,7 @@ UIImage *bit_imageToFitSize(UIImage *inputImage, CGSize fitSize, BOOL honorScale
     return nil;
   }
   
-	float imageScaleFactor = 1.0;
+	CGFloat imageScaleFactor = 1.0;
   if (honorScaleFactor) {
     if ([inputImage respondsToSelector:@selector(scale)]) {
       imageScaleFactor = [inputImage scale];

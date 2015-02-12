@@ -205,9 +205,10 @@
   // in the headers and will cause a warning with the modulemap file
 #if HOCKEYSDK_FEATURE_AUTHENTICATOR || HOCKEYSDK_FEATURE_UPDATES || HOCKEYSDK_FEATURE_FEEDBACK
   UIViewController *parentViewController = nil;
-    
-  if ([[BITHockeyManager sharedHockeyManager].delegate respondsToSelector:@selector(viewControllerForHockeyManager:componentManager:)]) {
-    parentViewController = [[BITHockeyManager sharedHockeyManager].delegate viewControllerForHockeyManager:[BITHockeyManager sharedHockeyManager] componentManager:self];
+  
+  typeof([BITHockeyManager sharedHockeyManager].delegate) strongDelegate = [BITHockeyManager sharedHockeyManager].delegate;
+  if ([strongDelegate respondsToSelector:@selector(viewControllerForHockeyManager:componentManager:)]) {
+    parentViewController = [strongDelegate viewControllerForHockeyManager:[BITHockeyManager sharedHockeyManager] componentManager:self];
   }
   
   UIWindow *visibleWindow = [self findVisibleWindow];

@@ -542,9 +542,10 @@ static PLCrashReporterCallbacks plCrashCallbacks = {
   }
 #endif
   
-  if ([BITHockeyManager sharedHockeyManager].delegate &&
-      [[BITHockeyManager sharedHockeyManager].delegate respondsToSelector:@selector(userIDForHockeyManager:componentManager:)]) {
-    userID = [[BITHockeyManager sharedHockeyManager].delegate
+  typeof([BITHockeyManager sharedHockeyManager].delegate) strongDelegate = [BITHockeyManager sharedHockeyManager].delegate;
+  if (strongDelegate &&
+      [strongDelegate respondsToSelector:@selector(userIDForHockeyManager:componentManager:)]) {
+    userID = [strongDelegate
                 userIDForHockeyManager:[BITHockeyManager sharedHockeyManager]
                 componentManager:self] ?: @"";
   }
@@ -561,12 +562,14 @@ static PLCrashReporterCallbacks plCrashCallbacks = {
   // first check the global keychain storage
   NSString *username = [self stringValueFromKeychainForKey:kBITHockeyMetaUserName] ?: @"";
   
-  if (self.delegate && [self.delegate respondsToSelector:@selector(userNameForCrashManager:)]) {
-    username = [self.delegate userNameForCrashManager:self] ?: @"";
+  typeof(self.delegate) strongDelegate = self.delegate;
+  if (strongDelegate && [strongDelegate respondsToSelector:@selector(userNameForCrashManager:)]) {
+    username = [strongDelegate userNameForCrashManager:self] ?: @"";
   }
-  if ([BITHockeyManager sharedHockeyManager].delegate &&
-      [[BITHockeyManager sharedHockeyManager].delegate respondsToSelector:@selector(userNameForHockeyManager:componentManager:)]) {
-    username = [[BITHockeyManager sharedHockeyManager].delegate
+  typeof([BITHockeyManager sharedHockeyManager].delegate) strongHockeyDelegate = [BITHockeyManager sharedHockeyManager].delegate;
+  if (strongHockeyDelegate &&
+      [strongHockeyDelegate respondsToSelector:@selector(userNameForHockeyManager:componentManager:)]) {
+    username = [strongHockeyDelegate
                 userNameForHockeyManager:[BITHockeyManager sharedHockeyManager]
                 componentManager:self] ?: @"";
   }
@@ -595,12 +598,14 @@ static PLCrashReporterCallbacks plCrashCallbacks = {
   }
 #endif
   
-  if (self.delegate && [self.delegate respondsToSelector:@selector(userEmailForCrashManager:)]) {
-    useremail = [self.delegate userEmailForCrashManager:self] ?: @"";
+  typeof([BITHockeyManager sharedHockeyManager].delegate) strongHockeyDelegate = [BITHockeyManager sharedHockeyManager].delegate;
+  typeof(self.delegate) strongDelegate = self.delegate;
+  if (strongDelegate && [strongDelegate respondsToSelector:@selector(userEmailForCrashManager:)]) {
+    useremail = [strongDelegate userEmailForCrashManager:self] ?: @"";
   }
-  if ([BITHockeyManager sharedHockeyManager].delegate &&
-      [[BITHockeyManager sharedHockeyManager].delegate respondsToSelector:@selector(userEmailForHockeyManager:componentManager:)]) {
-    useremail = [[BITHockeyManager sharedHockeyManager].delegate
+  if (strongHockeyDelegate &&
+      [strongHockeyDelegate respondsToSelector:@selector(userEmailForHockeyManager:componentManager:)]) {
+    useremail = [strongHockeyDelegate
                  userEmailForHockeyManager:[BITHockeyManager sharedHockeyManager]
                  componentManager:self] ?: @"";
   }
@@ -694,13 +699,14 @@ static PLCrashReporterCallbacks plCrashCallbacks = {
   [self addStringValueToKeychain:[self userEmailForCrashReport] forKey:[NSString stringWithFormat:@"%@.%@", filename, kBITCrashMetaUserEmail]];
   [self addStringValueToKeychain:[self userIDForCrashReport] forKey:[NSString stringWithFormat:@"%@.%@", filename, kBITCrashMetaUserID]];
   
-  if (self.delegate != nil && [self.delegate respondsToSelector:@selector(applicationLogForCrashManager:)]) {
-    applicationLog = [self.delegate applicationLogForCrashManager:self] ?: @"";
+  typeof(self.delegate) strongDelegate = self.delegate;
+  if (strongDelegate != nil && [strongDelegate respondsToSelector:@selector(applicationLogForCrashManager:)]) {
+    applicationLog = [strongDelegate applicationLogForCrashManager:self] ?: @"";
   }
   [metaDict setObject:applicationLog forKey:kBITCrashMetaApplicationLog];
   
-  if (self.delegate != nil && [self.delegate respondsToSelector:@selector(attachmentForCrashManager:)]) {
-    BITHockeyAttachment *attachment = [self.delegate attachmentForCrashManager:self];
+  if (strongDelegate != nil && [strongDelegate respondsToSelector:@selector(attachmentForCrashManager:)]) {
+    BITHockeyAttachment *attachment = [strongDelegate attachmentForCrashManager:self];
     
     if (attachment && attachment.hockeyAttachmentData) {
       [self persistAttachment:attachment withFilename:[_crashesDir stringByAppendingPathComponent: filename]];
@@ -719,10 +725,11 @@ static PLCrashReporterCallbacks plCrashCallbacks = {
 }
 
 - (BOOL)handleUserInput:(BITCrashManagerUserInput)userInput withUserProvidedMetaData:(BITCrashMetaData *)userProvidedMetaData {
+  typeof(self.delegate) strongDelegate = self.delegate;
   switch (userInput) {
     case BITCrashManagerUserInputDontSend:
-      if (self.delegate != nil && [self.delegate respondsToSelector:@selector(crashManagerWillCancelSendingCrashReport:)]) {
-        [self.delegate crashManagerWillCancelSendingCrashReport:self];
+      if (strongDelegate != nil && [strongDelegate respondsToSelector:@selector(crashManagerWillCancelSendingCrashReport:)]) {
+        [strongDelegate crashManagerWillCancelSendingCrashReport:self];
       }
       
       if (_lastCrashFilename)
@@ -741,8 +748,8 @@ static PLCrashReporterCallbacks plCrashCallbacks = {
       _crashManagerStatus = BITCrashManagerStatusAutoSend;
       [[NSUserDefaults standardUserDefaults] setInteger:_crashManagerStatus forKey:kBITCrashManagerStatus];
       [[NSUserDefaults standardUserDefaults] synchronize];
-      if (self.delegate != nil && [self.delegate respondsToSelector:@selector(crashManagerWillSendCrashReportsAlways:)]) {
-        [self.delegate crashManagerWillSendCrashReportsAlways:self];
+      if (strongDelegate != nil && [strongDelegate respondsToSelector:@selector(crashManagerWillSendCrashReportsAlways:)]) {
+        [strongDelegate crashManagerWillSendCrashReportsAlways:self];
       }
       
       if (userProvidedMetaData)
@@ -892,8 +899,9 @@ static PLCrashReporterCallbacks plCrashCallbacks = {
     return YES;
   } else {
     if (_didCrashInLastSession) {
-      if (self.delegate != nil && [self.delegate respondsToSelector:@selector(crashManagerWillCancelSendingCrashReport:)]) {
-        [self.delegate crashManagerWillCancelSendingCrashReport:self];
+      typeof(self.delegate) strongDelegate = self.delegate;
+      if (strongDelegate != nil && [strongDelegate respondsToSelector:@selector(crashManagerWillCancelSendingCrashReport:)]) {
+        [strongDelegate crashManagerWillCancelSendingCrashReport:self];
       }
 
       _didCrashInLastSession = NO;
@@ -952,8 +960,9 @@ static PLCrashReporterCallbacks plCrashCallbacks = {
       [self sendNextCrashReport];
     } else if (_crashManagerStatus != BITCrashManagerStatusAutoSend && notApprovedReportFilename) {
       
-      if (self.delegate != nil && [self.delegate respondsToSelector:@selector(crashManagerWillShowSubmitCrashReportAlert:)]) {
-        [self.delegate crashManagerWillShowSubmitCrashReportAlert:self];
+      typeof(self.delegate) strongDelegate = self.delegate;
+      if (strongDelegate != nil && [strongDelegate respondsToSelector:@selector(crashManagerWillShowSubmitCrashReportAlert:)]) {
+        [strongDelegate crashManagerWillShowSubmitCrashReportAlert:self];
       }
       
       NSString *appName = bit_appName(BITHockeyLocalizedString(@"HockeyAppNamePlaceholder"));
@@ -1096,9 +1105,10 @@ static PLCrashReporterCallbacks plCrashCallbacks = {
     if (!didAppSwitchToBackgroundSafely) {
       BOOL considerReport = YES;
       
-      if (self.delegate &&
-          [self.delegate respondsToSelector:@selector(considerAppNotTerminatedCleanlyReportForCrashManager:)]) {
-        considerReport = [self.delegate considerAppNotTerminatedCleanlyReportForCrashManager:self];
+      typeof(self.delegate) strongDelegate = self.delegate;
+      if (strongDelegate &&
+          [strongDelegate respondsToSelector:@selector(considerAppNotTerminatedCleanlyReportForCrashManager:)]) {
+        considerReport = [strongDelegate considerAppNotTerminatedCleanlyReportForCrashManager:self];
       }
       
       if (considerReport) {
@@ -1447,7 +1457,8 @@ static PLCrashReporterCallbacks plCrashCallbacks = {
   NSURLRequest* request = [self requestWithXML:xml attachment:attachment];
   
   __weak typeof (self) weakSelf = self;
-  BITHTTPOperation *operation = [self.hockeyAppClient
+  typeof(self.delegate) strongDelegate = self.delegate;
+ BITHTTPOperation *operation = [self.hockeyAppClient
                                  operationWithURLRequest:request
                                  completion:^(BITHTTPOperation *operation, NSData* responseData, NSError *error) {
                                    typeof (self) strongSelf = weakSelf;
@@ -1474,9 +1485,9 @@ static PLCrashReporterCallbacks plCrashCallbacks = {
                                                                                                                    error:&error];
                                        BITHockeyLog(@"INFO: Received API response: %@", response);
                                        
-                                       if (strongSelf.delegate != nil &&
-                                           [strongSelf.delegate respondsToSelector:@selector(crashManagerDidFinishSendingCrashReport:)]) {
-                                         [strongSelf.delegate crashManagerDidFinishSendingCrashReport:self];
+                                       if (strongDelegate != nil &&
+                                           [strongDelegate respondsToSelector:@selector(crashManagerDidFinishSendingCrashReport:)]) {
+                                         [strongDelegate crashManagerDidFinishSendingCrashReport:self];
                                        }
                                        
                                        // only if sending the crash report went successfully, continue with the next one (if there are more)
@@ -1501,9 +1512,9 @@ static PLCrashReporterCallbacks plCrashCallbacks = {
                                    }
                                    
                                    if (error) {
-                                     if (strongSelf.delegate != nil &&
-                                         [strongSelf.delegate respondsToSelector:@selector(crashManager:didFailWithError:)]) {
-                                       [strongSelf.delegate crashManager:self didFailWithError:error];
+                                     if (strongDelegate != nil &&
+                                         [strongDelegate respondsToSelector:@selector(crashManager:didFailWithError:)]) {
+                                       [strongDelegate crashManager:self didFailWithError:error];
                                      }
                                      
                                      BITHockeyLog(@"ERROR: %@", [error localizedDescription]);
@@ -1511,8 +1522,8 @@ static PLCrashReporterCallbacks plCrashCallbacks = {
                                    
                                  }];
   
-  if (self.delegate != nil && [self.delegate respondsToSelector:@selector(crashManagerWillSendCrashReport:)]) {
-    [self.delegate crashManagerWillSendCrashReport:self];
+  if (strongDelegate != nil && [strongDelegate respondsToSelector:@selector(crashManagerWillSendCrashReport:)]) {
+    [strongDelegate crashManagerWillSendCrashReport:self];
   }
   
   BITHockeyLog(@"INFO: Sending crash reports started.");

@@ -66,7 +66,8 @@
 #pragma mark - Private
 
 - (UIColor *)backgroundColor {
-  if ([self.updateManager isPreiOS7Environment]) {
+  typeof(self.updateManager) strongManager = self.updateManager;
+  if ([strongManager isPreiOS7Environment]) {
     return BIT_RGBCOLOR(235, 235, 235);
   } else {
     return BIT_RGBCOLOR(255, 255, 255);
@@ -74,9 +75,10 @@
 }
 
 - (void)restoreStoreButtonStateAnimated:(BOOL)animated {
+  typeof(self.updateManager) strongManager = self.updateManager;
   if (_isAppStoreEnvironment) {
     [self setAppStoreButtonState:AppStoreButtonStateOffline animated:animated];
-  } else if ([_updateManager isUpdateAvailable]) {
+  } else if ([strongManager isUpdateAvailable]) {
     [self setAppStoreButtonState:AppStoreButtonStateUpdate animated:animated];
   } else {
     [self setAppStoreButtonState:AppStoreButtonStateCheck animated:animated];
@@ -84,15 +86,17 @@
 }
 
 - (void)updateAppStoreHeader {
-  BITAppVersionMetaInfo *appVersion = _updateManager.newestAppVersion;
+  typeof(self.updateManager) strongManager = self.updateManager;
+  BITAppVersionMetaInfo *appVersion = strongManager.newestAppVersion;
   _appStoreHeader.headerText = appVersion.name;
-  _appStoreHeader.subHeaderText = _updateManager.companyName;
+  _appStoreHeader.subHeaderText = strongManager.companyName;
 }
 
 - (void)appDidBecomeActive {
+  typeof(self.updateManager) strongManager = self.updateManager;
   if (self.appStoreButtonState == AppStoreButtonStateInstalling) {
     [self setAppStoreButtonState:AppStoreButtonStateUpdate animated:YES];
-  } else if (![_updateManager isCheckInProgress]) {
+  } else if (![strongManager isCheckInProgress]) {
     [self restoreStoreButtonStateAnimated:YES];
   }
 }
@@ -112,14 +116,14 @@
 
 #define kMinPreviousVersionButtonHeight 50
 - (void)realignPreviousVersionButton {
-  
+  typeof(self.updateManager) strongManager = self.updateManager;
   // manually collect actual table height size
   NSUInteger tableViewContentHeight = 0;
   for (int i=0; i < [self tableView:self.tableView numberOfRowsInSection:0]; i++) {
     tableViewContentHeight += [self tableView:self.tableView heightForRowAtIndexPath:[NSIndexPath indexPathForRow:i inSection:0]];
   }
   tableViewContentHeight += self.tableView.tableHeaderView.frame.size.height;
-  if (![self.updateManager isPreiOS7Environment]) {
+  if (![strongManager isPreiOS7Environment]) {
     tableViewContentHeight += self.navigationController.navigationBar.frame.size.height;
     tableViewContentHeight += [UIApplication sharedApplication].statusBarFrame.size.height;
   }
@@ -172,7 +176,8 @@
 }
 
 - (void)showHidePreviousVersionsButton {
-  BOOL multipleVersionButtonNeeded = [_updateManager.appVersions count] > 1 && !_showAllVersions;
+  typeof(self.updateManager) strongManager = self.updateManager;
+  BOOL multipleVersionButtonNeeded = [strongManager.appVersions count] > 1 && !_showAllVersions;
   
   if(multipleVersionButtonNeeded) {
     // align at the bottom if tableview is small
@@ -214,6 +219,8 @@
 }
 
 - (void)configureWebCell:(BITWebTableViewCell *)cell forAppVersion:(BITAppVersionMetaInfo *)appVersion {
+
+  typeof(self.updateManager) strongManager = self.updateManager;
   // create web view for a version
   NSMutableString *dateAndSizeString = [NSMutableString string];
   if (appVersion.date) {
@@ -227,15 +234,15 @@
   }
   
   NSString *installed = @"";
-  if ([appVersion.version isEqualToString:[_updateManager currentAppVersion]]) {
+  if ([appVersion.version isEqualToString:[strongManager currentAppVersion]]) {
     installed = [NSString stringWithFormat:@"<span style=\"float:right;\"><b>%@</b></span>", BITHockeyLocalizedString(@"UpdateInstalled")];
   }
   
-  if ([appVersion isEqual:_updateManager.newestAppVersion]) {
+  if ([appVersion isEqual:strongManager.newestAppVersion]) {
     if ([appVersion.notes length] > 0) {
       cell.webViewContent = [NSString stringWithFormat:@"<p><b>%@</b>%@<br/><small>%@</small></p><p>%@</p>", [appVersion versionString], installed, dateAndSizeString, appVersion.notes];
     } else {
-      if ([self.updateManager isPreiOS7Environment]) {
+      if ([strongManager isPreiOS7Environment]) {
         cell.webViewContent = [NSString stringWithFormat:@"<div style=\"min-height:200px;vertical-align:middle;text-align:center;\">%@</div>", BITHockeyLocalizedString(@"UpdateNoReleaseNotesAvailable")];
       } else {
         cell.webViewContent = [NSString stringWithFormat:@"<div style=\"min-height:130px;vertical-align:middle;text-align:center;\">%@</div>", BITHockeyLocalizedString(@"UpdateNoReleaseNotesAvailable")];
@@ -273,10 +280,11 @@
   
   // test if KVO's are registered. if class is destroyed before it was shown(viewDidLoad) no KVOs are registered.
   if (_kvoRegistered) {
-    [_updateManager removeObserver:self forKeyPath:@"checkInProgress"];
-    [_updateManager removeObserver:self forKeyPath:@"isUpdateURLOffline"];
-    [_updateManager removeObserver:self forKeyPath:@"updateAvailable"];
-    [_updateManager removeObserver:self forKeyPath:@"appVersions"];
+    typeof(self.updateManager) strongManager = self.updateManager;
+    [strongManager removeObserver:self forKeyPath:@"checkInProgress"];
+    [strongManager removeObserver:self forKeyPath:@"isUpdateURLOffline"];
+    [strongManager removeObserver:self forKeyPath:@"updateAvailable"];
+    [strongManager removeObserver:self forKeyPath:@"appVersions"];
     _kvoRegistered = NO;
   }
   
@@ -292,15 +300,17 @@
 - (void)viewDidLoad {
   [super viewDidLoad];
   
+  typeof(self.updateManager) strongManager = self.updateManager;
+
   // add notifications only to loaded view
   NSNotificationCenter *dnc = [NSNotificationCenter defaultCenter];
   [dnc addObserver:self selector:@selector(appDidBecomeActive) name:UIApplicationDidBecomeActiveNotification object:nil];
   
   // hook into manager with kvo!
-  [_updateManager addObserver:self forKeyPath:@"checkInProgress" options:0 context:nil];
-  [_updateManager addObserver:self forKeyPath:@"isUpdateURLOffline" options:0 context:nil];
-  [_updateManager addObserver:self forKeyPath:@"updateAvailable" options:0 context:nil];
-  [_updateManager addObserver:self forKeyPath:@"appVersions" options:0 context:nil];
+  [strongManager addObserver:self forKeyPath:@"checkInProgress" options:0 context:nil];
+  [strongManager addObserver:self forKeyPath:@"isUpdateURLOffline" options:0 context:nil];
+  [strongManager addObserver:self forKeyPath:@"updateAvailable" options:0 context:nil];
+  [strongManager addObserver:self forKeyPath:@"appVersions" options:0 context:nil];
   _kvoRegistered = YES;
   
   self.tableView.backgroundColor = BIT_RGBCOLOR(245, 245, 245);
@@ -312,7 +322,7 @@
   [self.tableView addSubview:topView];
   
   _appStoreHeader = [[BITAppStoreHeader alloc] initWithFrame:CGRectMake(0, 0, self.view.frame.size.width, kAppStoreViewHeight)];
-  if ([self.updateManager isPreiOS7Environment]) {
+  if ([strongManager isPreiOS7Environment]) {
     _appStoreHeader.style = BITAppStoreHeaderStyleDefault;
   } else {
     _appStoreHeader.style = BITAppStoreHeaderStyleOS7;
@@ -327,7 +337,7 @@
       addGloss = ![prerendered boolValue];
     }
     
-    if (addGloss && [self.updateManager isPreiOS7Environment]) {
+    if (addGloss && [strongManager isPreiOS7Environment]) {
       _appStoreHeader.iconImage = [self addGlossToImage:[UIImage imageNamed:iconFilename]];
     } else {
       _appStoreHeader.iconImage = [UIImage imageNamed:iconFilename];
@@ -337,7 +347,7 @@
   self.tableView.tableHeaderView = _appStoreHeader;
   
   BITStoreButtonStyle buttonStyle = BITStoreButtonStyleDefault;
-  if (![self.updateManager isPreiOS7Environment]) {
+  if (![strongManager isPreiOS7Environment]) {
     buttonStyle = BITStoreButtonStyleOS7;
   }
   BITStoreButton *storeButton = [[BITStoreButton alloc] initWithPadding:CGPointMake(5, 58) style:buttonStyle];
@@ -351,24 +361,27 @@
 }
 
 - (void)viewWillAppear:(BOOL)animated {
+  typeof(self.updateManager) strongManager = self.updateManager;
   if (_isAppStoreEnvironment) {
     self.appStoreButtonState = AppStoreButtonStateOffline;
   } else if (self.mandatoryUpdate) {
     self.navigationItem.leftBarButtonItem = nil;
   }
-  _updateManager.currentHockeyViewController = self;
+  strongManager.currentHockeyViewController = self;
   [super viewWillAppear:animated];
   [self redrawTableView];
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
-  _updateManager.currentHockeyViewController = nil;
+  typeof(self.updateManager) strongManager = self.updateManager;
+  strongManager.currentHockeyViewController = nil;
   //if the popover is still visible, dismiss it
   [_popOverController dismissPopoverAnimated:YES];
   [super viewWillDisappear:animated];
 }
 
 - (void)redrawTableView {
+  typeof(self.updateManager) strongManager = self.updateManager;
   [self restoreStoreButtonStateAnimated:NO];
   [self updateAppStoreHeader];
   
@@ -380,12 +393,12 @@
   
   int i = 0;
   BOOL breakAfterThisAppVersion = NO;
-  for (BITAppVersionMetaInfo *appVersion in _updateManager.appVersions) {
+  for (BITAppVersionMetaInfo *appVersion in strongManager.appVersions) {
     i++;
     
     // only show the newer version of the app by default, if we don't show all versions
     if (!_showAllVersions) {
-      if ([appVersion.version isEqualToString:[_updateManager currentAppVersion]]) {
+      if ([appVersion.version isEqualToString:[strongManager currentAppVersion]]) {
         if (i == 1) {
           breakAfterThisAppVersion = YES;
         } else {
@@ -406,14 +419,15 @@
 }
 
 - (void)showPreviousVersionAction {
+  typeof(self.updateManager) strongManager = self.updateManager;
   _showAllVersions = YES;
   BOOL showAllPending = NO;
   
-  for (BITAppVersionMetaInfo *appVersion in _updateManager.appVersions) {
+  for (BITAppVersionMetaInfo *appVersion in strongManager.appVersions) {
     if (!showAllPending) {
-      if ([appVersion.version isEqualToString:[_updateManager currentAppVersion]]) {            
+      if ([appVersion.version isEqualToString:[strongManager currentAppVersion]]) {
         showAllPending = YES;
-        if (appVersion == _updateManager.newestAppVersion) {
+        if (appVersion == strongManager.newestAppVersion) {
           continue; // skip this version already if it the latest version is the installed one
         }
       } else {
@@ -438,13 +452,14 @@
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
   CGFloat rowHeight = 0;
+  typeof(self.updateManager) strongManager = self.updateManager;
   
   if ([_cells count] > (NSUInteger)indexPath.row) {
     BITWebTableViewCell *cell = [_cells objectAtIndex:indexPath.row];
     rowHeight = cell.webViewSize.height;
   }
   
-  if ([_updateManager.appVersions count] > 1 && !_showAllVersions) {
+  if ([strongManager.appVersions count] > 1 && !_showAllVersions) {
     self.tableView.backgroundColor = BIT_RGBCOLOR(245, 245, 245);
   }
   
@@ -465,13 +480,14 @@
 #pragma mark - KVO
 
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context {
+  typeof(self.updateManager) strongManager = self.updateManager;
   // only make changes if we are visible
   if(self.view.window) {
     if ([keyPath isEqualToString:@"webViewSize"]) {
       [self.tableView reloadData];
       [self realignPreviousVersionButton];
     } else if ([keyPath isEqualToString:@"checkInProgress"]) {
-      if (_updateManager.isCheckInProgress) {
+      if (strongManager.isCheckInProgress) {
         [self setAppStoreButtonState:AppStoreButtonStateSearching animated:YES];
       }else {
         [self restoreStoreButtonStateAnimated:YES];
@@ -536,12 +552,13 @@
 }
 
 - (void)storeButtonFired:(BITStoreButton *)button {
+  typeof(self.updateManager) strongManager = self.updateManager;
   switch (_appStoreButtonState) {
     case AppStoreButtonStateCheck:
-      [_updateManager checkForUpdateShowFeedback:YES];
+      [strongManager checkForUpdateShowFeedback:YES];
       break;
     case AppStoreButtonStateUpdate:
-      if ([_updateManager initiateAppDownload]) {
+      if ([strongManager initiateAppDownload]) {
         [self setAppStoreButtonState:AppStoreButtonStateInstalling animated:YES];
       };
       break;

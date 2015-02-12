@@ -389,13 +389,14 @@
     [self dismissViewControllerAnimated:YES completion:^(void){}];
   }
   
-  if (strongManager.delegate &&
-      [strongManager.delegate respondsToSelector:@selector(feedbackComposeViewController:didFinishWithResult:)]) {
-    [strongManager.delegate feedbackComposeViewController:composeViewController didFinishWithResult:composeResult];
-  } else if (strongManager.delegate && [strongManager.delegate respondsToSelector:@selector(feedbackComposeViewControllerDidFinish:)]) {
+  typeof(strongManager.delegate) strongDelegate = strongManager.delegate;
+  if (strongDelegate &&
+      [strongDelegate respondsToSelector:@selector(feedbackComposeViewController:didFinishWithResult:)]) {
+    [strongDelegate feedbackComposeViewController:composeViewController didFinishWithResult:composeResult];
+  } else if (strongDelegate && [strongDelegate respondsToSelector:@selector(feedbackComposeViewControllerDidFinish:)]) {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated"
-    [strongManager.delegate feedbackComposeViewControllerDidFinish:composeViewController];
+    [strongDelegate feedbackComposeViewControllerDidFinish:composeViewController];
 #pragma clang diagnostic pop
   }
 }
@@ -455,7 +456,7 @@
 }
 
 - (UIView *)tableView:(UITableView *)tableView viewForHeaderInSection:(NSInteger)section {
-  typeof(strongManager) strongManager = strongManager;
+  typeof(self.manager) strongManager = self.manager;
 if (![strongManager isPreiOS7Environment] && section == 0) {
     UIView *containerView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, self.view.frame.size.width, 30.0f)];
     UILabel *textLabel = [[UILabel alloc] initWithFrame:CGRectMake(16.0f, 5.0f, self.view.frame.size.width - 32.0f, 25.0f)];
@@ -478,7 +479,7 @@ if (![strongManager isPreiOS7Environment] && section == 0) {
   static NSString *ButtonBottomIdentifier = @"ButtonBottomCell";
   static NSString *ButtonDeleteIdentifier = @"ButtonDeleteCell";
   
-  typeof(strongManager) strongManager = strongManager;
+  typeof(self.manager) strongManager = self.manager;
   if (indexPath.section == 0 && indexPath.row == 1 && ![strongManager isPreiOS7Environment]) {
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:LastUpdateIdentifier];
     
@@ -698,11 +699,12 @@ if (![strongManager isPreiOS7Environment] && section == 0) {
 
 - (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath {
   if (editingStyle == UITableViewCellEditingStyleDelete) {
+    typeof(self.manager) strongManager = self.manager;
     BITFeedbackMessage *message = [strongManager messageAtIndex:indexPath.row];
     BOOL messageHasAttachments = ([message attachments].count > 0);
     
-    if ([_manager deleteMessageAtIndex:indexPath.row]) {
-      if ([_manager numberOfMessages] > 0) {
+    if ([strongManager deleteMessageAtIndex:indexPath.row]) {
+      if ([strongManager numberOfMessages] > 0) {
         [tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationAutomatic];
       } else {
         [tableView reloadData];
@@ -719,6 +721,7 @@ if (![strongManager isPreiOS7Environment] && section == 0) {
 #pragma mark - Table view delegate
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
+  typeof(self.manager) strongManager = self.manager;
   if (indexPath.section == 0 ) {
     if ([strongManager isPreiOS7Environment])
       return 87;
@@ -739,6 +742,7 @@ if (![strongManager isPreiOS7Environment] && section == 0) {
 }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+  typeof(self.manager) strongManager = self.manager;
   if (![strongManager isPreiOS7Environment]) {
     if (indexPath.section == 0) {
       [self newFeedbackAction:self];
@@ -835,6 +839,7 @@ if (![strongManager isPreiOS7Environment] && section == 0) {
 }
 
 - (void)refreshPreviewItems {
+  typeof(self.manager) strongManager = self.manager;
   self.cachedPreviewItems = nil;
   NSMutableArray *collectedAttachments = [NSMutableArray new];
   
@@ -863,14 +868,15 @@ if (![strongManager isPreiOS7Environment] && section == 0) {
       attachment.isLoading = YES;
       NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:attachment.sourceURL]];
       [NSURLConnection sendAsynchronousRequest:request queue:self.thumbnailQueue completionHandler:^(NSURLResponse *response, NSData *responseData, NSError *err) {
+        __strong typeof(blockController) strongBlockController = blockController;
         attachment.isLoading = NO;
         if (responseData.length) {
           [attachment replaceData:responseData];
-          [blockController reloadData];
+          [strongBlockController reloadData];
           
           [[BITHockeyManager sharedHockeyManager].feedbackManager saveMessages];
         } else {
-          [blockController reloadData];
+          [strongBlockController reloadData];
         }
       }];
       

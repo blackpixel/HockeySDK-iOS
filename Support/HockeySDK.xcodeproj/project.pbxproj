@@ -1196,6 +1196,7 @@
 					"\"$(SRCROOT)/../Vendor\"",
 				);
 				GCC_THUMB_SUPPORT = NO;
+				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				PRODUCT_NAME = HockeySDK;
 				PUBLIC_HEADERS_FOLDER_PATH = "include/$(PRODUCT_NAME)";
@@ -1218,6 +1219,7 @@
 					"\"$(SRCROOT)/../Vendor\"",
 				);
 				GCC_THUMB_SUPPORT = NO;
+				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
 				"IPHONEOS_DEPLOYMENT_TARGET[sdk=iphonesimulator*]" = 5.1.1;
 				OTHER_CFLAGS = (
 					"$(inherited)",
@@ -1377,6 +1379,7 @@
 					"\"$(SRCROOT)/../Vendor\"",
 				);
 				GCC_THUMB_SUPPORT = NO;
+				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
 				GENERATE_PROFILING_CODE = YES;
 				PRODUCT_NAME = HockeySDK;
 				PUBLIC_HEADERS_FOLDER_PATH = "include/$(PRODUCT_NAME)";
@@ -1497,6 +1500,7 @@
 					"\"$(SRCROOT)/../Vendor\"",
 				);
 				GCC_THUMB_SUPPORT = NO;
+				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
 				OTHER_CFLAGS = (
 					"$(inherited)",
 					"-DNS_BLOCK_ASSERTIONS=1",

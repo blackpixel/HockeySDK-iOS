@@ -124,7 +124,7 @@
                                          tailWidth:(CGFloat)tailWidth
                                          headWidth:(CGFloat)headWidth
                                         headLength:(CGFloat)headLength {
-  CGFloat length = hypotf(endPoint.x - startPoint.x, endPoint.y - startPoint.y);
+  CGFloat length = hypot(endPoint.x - startPoint.x, endPoint.y - startPoint.y);
   
   CGPoint points[kArrowPointCount];
   [self getAxisAlignedArrowPoints:points
@@ -181,7 +181,7 @@
 
 - (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event {
 
-  CGPathRef strokePath = CGPathCreateCopyByStrokingPath(self.shapeLayer.path, NULL, fmaxf(90.0f, self.shapeLayer.lineWidth), kCGLineCapRound,kCGLineJoinMiter,0);
+  CGPathRef strokePath = CGPathCreateCopyByStrokingPath(self.shapeLayer.path, NULL, fmax(90.0f, self.shapeLayer.lineWidth), kCGLineCapRound,kCGLineJoinMiter,0);
   
   BOOL containsPoint = CGPathContainsPoint(strokePath, NULL, point, NO);
   

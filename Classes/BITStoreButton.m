@@ -66,7 +66,8 @@
 #pragma mark - private
 
 - (void)buttonPressed:(id)sender {
-  [_buttonDelegate storeButtonFired:self];
+  __strong typeof(_buttonDelegate) strongButtonDelegate = _buttonDelegate;
+  [strongButtonDelegate storeButtonFired:self];
 }
 
 - (void)animationDidStop:(NSString *)animationID finished:(NSNumber *)finished context:(void *)context {

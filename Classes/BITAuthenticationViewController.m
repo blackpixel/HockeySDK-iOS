@@ -136,13 +136,15 @@
 }
 
 - (IBAction) handleWebLoginButton:(id)sender {
-  [self.delegate authenticationViewControllerDidTapWebButton:self];
+  typeof(self.delegate) strongDelegate = self.delegate;
+  [strongDelegate authenticationViewControllerDidTapWebButton:self];
 }
 
 - (void)setEmail:(NSString *)email {
+  __strong typeof(_emailField) strongEmailField = _emailField;
   _email = email;
   if(self.isViewLoaded) {
-    _emailField.text = email;
+    strongEmailField.text = email;
   }
 }
 
@@ -298,7 +300,8 @@
   [self setLoginUIEnabled:NO];
   
   __weak typeof(self) weakSelf = self;
-  [self.delegate authenticationViewController:self
+  typeof(self.delegate) strongDelegate = self.delegate;
+  [strongDelegate authenticationViewController:self
                 handleAuthenticationWithEmail:self.email
                                      password:self.password
                                    completion:^(BOOL succeeded, NSError *error) {

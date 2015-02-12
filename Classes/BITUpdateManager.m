@@ -113,8 +113,9 @@ typedef NS_ENUM(NSInteger, BITUpdateAlertViewTag) {
     // we only care about iOS 8 or later
     if (bit_isPreiOS8Environment()) return;
     
-    if (self.delegate != nil && [self.delegate respondsToSelector:@selector(updateManagerWillExitApp:)]) {
-      [self.delegate updateManagerWillExitApp:self];
+    typeof(self.delegate) strongDelegate = self.delegate;
+    if (strongDelegate != nil && [strongDelegate respondsToSelector:@selector(updateManagerWillExitApp:)]) {
+      [strongDelegate updateManagerWillExitApp:self];
     }
     
     // for now we simply exit the app, later SDK versions might optionally show an alert with localized text
@@ -212,8 +213,9 @@ typedef NS_ENUM(NSInteger, BITUpdateAlertViewTag) {
   
   BOOL shouldShowDefaultAlert = YES;
   
-  if (self.delegate != nil && [self.delegate respondsToSelector:@selector(shouldDisplayExpiryAlertForUpdateManager:)]) {
-    shouldShowDefaultAlert = [self.delegate shouldDisplayExpiryAlertForUpdateManager:self];
+  typeof(self.delegate) strongDelegate = self.delegate;
+  if (strongDelegate != nil && [strongDelegate respondsToSelector:@selector(shouldDisplayExpiryAlertForUpdateManager:)]) {
+    shouldShowDefaultAlert = [strongDelegate shouldDisplayExpiryAlertForUpdateManager:self];
   }
   
   if (shouldShowDefaultAlert) {
@@ -222,8 +224,8 @@ typedef NS_ENUM(NSInteger, BITUpdateAlertViewTag) {
       _blockingScreenMessage = [NSString stringWithFormat:BITHockeyLocalizedString(@"UpdateExpired"), appName];
     [self showBlockingScreen:_blockingScreenMessage image:@"authorize_denied.png"];
 
-    if (self.delegate != nil && [self.delegate respondsToSelector:@selector(didDisplayExpiryAlertForUpdateManager:)]) {
-      [self.delegate didDisplayExpiryAlertForUpdateManager:self];
+    if (strongDelegate != nil && [strongDelegate respondsToSelector:@selector(didDisplayExpiryAlertForUpdateManager:)]) {
+      [strongDelegate didDisplayExpiryAlertForUpdateManager:self];
     }
     
     // the UI is now blocked, make sure we don't add our UI on top of it over and over again
@@ -771,8 +773,9 @@ typedef NS_ENUM(NSInteger, BITUpdateAlertViewTag) {
     
     BITHockeyLog(@"INFO: Starting UpdateManager");
     
-    if (self.delegate != nil && [self.delegate respondsToSelector:@selector(updateManagerShouldSendUsageData:)]) {
-      _sendUsageData = [self.delegate updateManagerShouldSendUsageData:self];
+    typeof(self.delegate) strongDelegate = self.delegate;
+    if (strongDelegate != nil && [strongDelegate respondsToSelector:@selector(updateManagerShouldSendUsageData:)]) {
+      _sendUsageData = [strongDelegate updateManagerShouldSendUsageData:self];
     }
     
     [self checkExpiryDateReached];
