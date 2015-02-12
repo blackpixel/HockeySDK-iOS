@@ -32,7 +32,7 @@
 #import "HockeySDK.h"
 #import "HockeySDKPrivate.h"
 #import <QuartzCore/QuartzCore.h>
-
+#import "tgmath.h"
 
 #if __IPHONE_OS_VERSION_MAX_ALLOWED < 70000
 @interface NSData (BITHockeySDKiOS7)
@@ -528,7 +528,7 @@ UIImage *bit_imageToFitSize(UIImage *inputImage, CGSize fitSize, BOOL honorScale
   // Proportionally scale source image
   CGFloat scalingFactor, scaledWidth, scaledHeight;
   if (scaleWidth) {
-    scalingFactor = 1.0 / sourceRatio;
+    scalingFactor = 1.0f / sourceRatio;
     scaledWidth = targetWidth;
     scaledHeight = round(targetWidth * scalingFactor);
   } else {
