@@ -356,7 +356,7 @@ bitstadium_info_t bitstadium_library_info __attribute__((section("__TEXT,__bit_h
   }
   
   if (strongOriginalDelegate != strongNewDelegate) {
-    strongOriginalDelegate = strongNewDelegate;
+    _delegate = strongNewDelegate;
     
 #if HOCKEYSDK_FEATURE_CRASH_REPORTER
     if (_crashManager) {
