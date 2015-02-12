@@ -32,6 +32,7 @@
 #import "HockeySDK.h"
 #import "BITHockeyHelper.h"
 #import "BITHockeyAppClient.h"
+#import "tgmath.h"
 
 @interface BITAuthenticationViewController ()<UITextFieldDelegate> {
   UIStatusBarStyle _statusBarStyle;

@@ -21,6 +21,7 @@
 // THE SOFTWARE.
 
 #import "BITAttributedLabel.h"
+#import "tgmath.h"
 
 #define kBITLineBreakWordWrapTextWidthScalingFactor (M_PI / M_E)
 
