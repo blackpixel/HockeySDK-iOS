@@ -31,6 +31,7 @@
 #import "BITFeedbackListViewCell.h"
 #import "BITFeedbackMessageAttachment.h"
 #import "BITActivityIndicatorButton.h"
+#import "tgmath.h"
 
 #define BACKGROUNDCOLOR_DEFAULT BIT_RGBCOLOR(245.0f, 245.0f, 245.0f)
 #define BACKGROUNDCOLOR_ALTERNATE BIT_RGBCOLOR(235.0f, 235.0f, 235.0f)
