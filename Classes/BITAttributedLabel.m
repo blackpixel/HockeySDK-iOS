@@ -477,7 +477,7 @@ static inline NSAttributedString * NSAttributedStringBySettingColorFromContext(N
         
         // Get bounding information of line
         CGFloat ascent, descent, leading, width;
-        width = CTLineGetTypographicBounds(line, &ascent, &descent, &leading);
+        width = (CGFloat)CTLineGetTypographicBounds(line, &ascent, &descent, &leading);
         CGFloat yMin = floor(lineOrigin.y - descent);
         CGFloat yMax = ceil(lineOrigin.y + ascent);
         
@@ -625,7 +625,7 @@ static inline NSAttributedString * NSAttributedStringBySettingColorFromContext(N
                 CGFloat ascent = 0.0f;
                 CGFloat descent = 0.0f;
                 
-                runBounds.size.width = CTRunGetTypographicBounds((__bridge CTRunRef)glyphRun, CFRangeMake(0, 0), &ascent, &descent, NULL);
+                runBounds.size.width = (CGFloat)CTRunGetTypographicBounds((__bridge CTRunRef)glyphRun, CFRangeMake(0, 0), &ascent, &descent, NULL);
                 runBounds.size.height = ascent + descent;
                 
                 CGFloat xOffset = CTLineGetOffsetForStringIndex((__bridge CTLineRef)line, CTRunGetStringRange((__bridge CTRunRef)glyphRun).location, NULL);
@@ -682,7 +682,7 @@ static inline NSAttributedString * NSAttributedStringBySettingColorFromContext(N
                 CGFloat ascent = 0.0f;
                 CGFloat descent = 0.0f;
                 
-                runBounds.size.width = CTRunGetTypographicBounds((__bridge CTRunRef)glyphRun, CFRangeMake(0, 0), &ascent, &descent, NULL);
+                runBounds.size.width = (CGFloat)CTRunGetTypographicBounds((__bridge CTRunRef)glyphRun, CFRangeMake(0, 0), &ascent, &descent, NULL);
                 runBounds.size.height = ascent + descent;
                 
                 CGFloat xOffset = CTLineGetOffsetForStringIndex((__bridge CTLineRef)line, CTRunGetStringRange((__bridge CTRunRef)glyphRun).location, NULL);
