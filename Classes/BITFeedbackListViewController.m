@@ -298,7 +298,7 @@
     [deleteAction setActionSheetStyle:UIActionSheetStyleBlackTranslucent];
     [deleteAction showInView:[self viewForShowingActionSheetOnPhone]];
   } else {
-    UIAlertView *deleteAction = [[UIAlertView alloc] initWithTitle:BITHockeyLocalizedString(@"HockeyFeedbackListButonDeleteAllMessages")
+    UIAlertView *deleteAction = [[UIAlertView alloc] initWithTitle:BITHockeyLocalizedString(@"HockeyFeedbackListButtonDeleteAllMessages")
                                                            message:BITHockeyLocalizedString(@"HockeyFeedbackListDeleteAllTitle")
                                                           delegate:self
                                                  cancelButtonTitle:BITHockeyLocalizedString(@"HockeyFeedbackListDeleteAllCancel")
@@ -310,7 +310,7 @@
 }
 
 - (UIView*) viewForShowingActionSheetOnPhone {
-  //find the topmost presented viewcontroller
+  //find the topmost presented view controller
   //and use its view
   UIViewController* topMostPresentedViewController = self.view.window.rootViewController;
   while(topMostPresentedViewController.presentedViewController) {
@@ -530,7 +530,11 @@ if (![strongManager isPreiOS7Environment] && section == 0) {
     // button
     NSString *titleString = nil;
     SEL actionSelector = nil;
+    
     UIColor *titleColor = BIT_RGBCOLOR(35, 111, 251);
+    if ([self.view respondsToSelector:@selector(tintColor)]){
+      titleColor = self.view.tintColor;
+    }
     
     UIButton *button = nil;
     if ([strongManager isPreiOS7Environment]) {
@@ -553,7 +557,7 @@ if (![strongManager isPreiOS7Environment] && section == 0) {
       if ([strongManager numberOfMessages] == 0) {
         titleString = BITHockeyLocalizedString(@"HockeyFeedbackListButonWriteFeedback");
       } else {
-        titleString = BITHockeyLocalizedString(@"HockeyFeedbackListButonWriteResponse");
+        titleString = BITHockeyLocalizedString(@"HockeyFeedbackListButtonWriteResponse");
       }
       actionSelector = @selector(newFeedbackAction:);
     } else if (indexPath.section == _userButtonSection) {
@@ -569,7 +573,7 @@ if (![strongManager isPreiOS7Environment] && section == 0) {
       } else if ([strongManager requireUserName] == BITFeedbackUserDataElementOptional) {
         titleString = BITHockeyLocalizedString(@"HockeyFeedbackListButonUserDataSetName");
       } else {
-        titleString = BITHockeyLocalizedString(@"HockeyFeedbackListButonUserDataSetEmail");
+        titleString = BITHockeyLocalizedString(@"HockeyFeedbackListButtonUserDataSetEmail");
       }
       actionSelector = @selector(setUserDataAction:);
     } else {
@@ -585,7 +589,7 @@ if (![strongManager isPreiOS7Environment] && section == 0) {
         [button setTitleShadowColor:BUTTON_DELETE_TEXTCOLOR_SHADOW forState:UIControlStateNormal];
       }
       
-      titleString = BITHockeyLocalizedString(@"HockeyFeedbackListButonDeleteAllMessages");
+      titleString = BITHockeyLocalizedString(@"HockeyFeedbackListButtonDeleteAllMessages");
       titleColor = BIT_RGBCOLOR(251, 35, 35);
       actionSelector = @selector(deleteAllMessagesAction:);
     }
@@ -647,9 +651,9 @@ if (![strongManager isPreiOS7Environment] && section == 0) {
     }
     
     if ([strongManager isPreiOS7Environment]) {
-      cell.style = BITFeedbackListViewCellPresentatationStyleDefault;
+      cell.style = BITFeedbackListViewCellPresentationStyleDefault;
     } else {
-      cell.style = BITFeedbackListViewCellPresentatationStyleOS7;
+      cell.style = BITFeedbackListViewCellPresentationStyleOS7;
     }
     
     BITFeedbackMessage *message = [strongManager messageAtIndex:indexPath.row];
@@ -664,10 +668,11 @@ if (![strongManager isPreiOS7Environment] && section == 0) {
         attachment.isLoading = YES;
         NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:attachment.sourceURL]];
         [NSURLConnection sendAsynchronousRequest:request queue:self.thumbnailQueue completionHandler:^(NSURLResponse *response, NSData *responseData, NSError *err) {
+          attachment.isLoading = NO;
           if (responseData.length) {
             dispatch_async(dispatch_get_main_queue(), ^{
               [attachment replaceData:responseData];
-              [self.tableView reloadRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationNone];
+              [[NSNotificationCenter defaultCenter] postNotificationName:kBITFeedbackUpdateAttachmentThumbnail object:attachment];
               [[BITHockeyManager sharedHockeyManager].feedbackManager saveMessages];
             });
           }

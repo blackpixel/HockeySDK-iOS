@@ -394,7 +394,7 @@ bitstadium_info_t bitstadium_library_info __attribute__((section("__TEXT,__bit_h
                                   andPassword:value
                                forServiceName:bit_keychainHockeySDKServiceName()
                                updateExisting:YES
-                                accessibility:kSecAttrAccessibleWhenUnlockedThisDeviceOnly
+                                accessibility:kSecAttrAccessibleAlwaysThisDeviceOnly
                                         error:&error];
   } else {
     updateType = @"delete";
@@ -616,8 +616,9 @@ bitstadium_info_t bitstadium_library_info __attribute__((section("__TEXT,__bit_h
   if (_validAppIdentifier) {
 #if HOCKEYSDK_FEATURE_CRASH_REPORTER
     BITHockeyLog(@"INFO: Setup CrashManager");
+    _crashManager = [[BITCrashManager alloc] initWithAppIdentifier:_appIdentifier isAppStoreEnvironment:_appStoreEnvironment];
     _crashManager.hockeyAppClient = [self hockeyAppClient];
-      _crashManager.delegate = strongDelegate;
+    _crashManager.delegate = strongDelegate;
 #endif /* HOCKEYSDK_FEATURE_CRASH_REPORTER */
     
 #if HOCKEYSDK_FEATURE_UPDATES
