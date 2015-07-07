@@ -564,7 +564,10 @@ static PLCrashReporterCallbacks plCrashCallbacks = {
   
   typeof(self.delegate) strongDelegate = self.delegate;
   if (strongDelegate && [strongDelegate respondsToSelector:@selector(userNameForCrashManager:)]) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     username = [strongDelegate userNameForCrashManager:self] ?: @"";
+#pragma clang diagnostic pop
   }
   typeof([BITHockeyManager sharedHockeyManager].delegate) strongHockeyDelegate = [BITHockeyManager sharedHockeyManager].delegate;
   if (strongHockeyDelegate &&
@@ -601,7 +604,10 @@ static PLCrashReporterCallbacks plCrashCallbacks = {
   typeof([BITHockeyManager sharedHockeyManager].delegate) strongHockeyDelegate = [BITHockeyManager sharedHockeyManager].delegate;
   typeof(self.delegate) strongDelegate = self.delegate;
   if (strongDelegate && [strongDelegate respondsToSelector:@selector(userEmailForCrashManager:)]) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     useremail = [strongDelegate userEmailForCrashManager:self] ?: @"";
+#pragma clang diagnostic pop
   }
   if (strongHockeyDelegate &&
       [strongHockeyDelegate respondsToSelector:@selector(userEmailForHockeyManager:componentManager:)]) {
