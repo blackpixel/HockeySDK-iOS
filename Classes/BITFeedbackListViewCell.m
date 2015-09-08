@@ -111,7 +111,7 @@
     _labelText = [[BITAttributedLabel alloc] init];
     _labelText.font = [UIFont systemFontOfSize:TEXT_FONTSIZE];
     _labelText.numberOfLines = 0;
-    _labelText.textAlignment = kBITTextLabelAlignmentLeft;
+    _labelText.textAlignment = NSTextAlignmentLeft;
     _labelText.dataDetectorTypes = UIDataDetectorTypeAll;
     
     _attachmentViews = [NSMutableArray new];
@@ -215,7 +215,6 @@
 + (CGFloat) heightForTextInRowWithMessage:(BITFeedbackMessage *)message tableViewWidth:(CGFloat)width {
   CGFloat calculatedHeight;
   
-#if __IPHONE_OS_VERSION_MAX_ALLOWED > __IPHONE_6_1
   if ([message.text respondsToSelector:@selector(boundingRectWithSize:options:attributes:context:)]) {
     CGRect calculatedRect = [message.text boundingRectWithSize:CGSizeMake(width - (2 * FRAME_SIDE_BORDER), CGFLOAT_MAX)
                                                        options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading
@@ -227,7 +226,6 @@
     
     
   } else {
-#endif
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
     calculatedHeight = [message.text sizeWithFont:[UIFont systemFontOfSize:TEXT_FONTSIZE]
@@ -235,9 +233,7 @@
                         ].height + FRAME_TOP_BORDER + LABEL_TEXT_Y + FRAME_BOTTOM_BORDER;
     
 #pragma clang diagnostic pop
-#if __IPHONE_OS_VERSION_MAX_ALLOWED > __IPHONE_6_1
   }
-#endif
   
   return ceil(calculatedHeight);
 }
@@ -313,11 +309,11 @@
   [self.labelTitle setFrame:CGRectMake(FRAME_SIDE_BORDER, FRAME_TOP_BORDER + LABEL_TITLE_Y, self.frame.size.width - (2 * FRAME_SIDE_BORDER), LABEL_TITLE_HEIGHT)];
   
   if (_message.userMessage) {
-    self.labelTitle.textAlignment = kBITTextLabelAlignmentRight;
-    self.labelText.textAlignment = kBITTextLabelAlignmentRight;
+    self.labelTitle.textAlignment = NSTextAlignmentRight;
+    self.labelText.textAlignment = NSTextAlignmentRight;
   } else {
-    self.labelTitle.textAlignment = kBITTextLabelAlignmentLeft;
-    self.labelText.textAlignment = kBITTextLabelAlignmentLeft;
+    self.labelTitle.textAlignment = NSTextAlignmentLeft;
+    self.labelText.textAlignment = NSTextAlignmentLeft;
   }
   
   [self addSubview:self.labelTitle];

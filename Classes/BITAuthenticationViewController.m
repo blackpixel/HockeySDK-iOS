@@ -26,16 +26,18 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#import "HockeySDK.h"
+
+#if HOCKEYSDK_FEATURE_AUTHENTICATOR
+
 #import "BITAuthenticationViewController.h"
 #import "BITAuthenticator_Private.h"
 #import "HockeySDKPrivate.h"
-#import "HockeySDK.h"
 #import "BITHockeyHelper.h"
 #import "BITHockeyAppClient.h"
 #import "tgmath.h"
 
 @interface BITAuthenticationViewController ()<UITextFieldDelegate> {
-  UIStatusBarStyle _statusBarStyle;
   __weak UITextField *_emailField;
 }
 
@@ -67,22 +69,9 @@
 - (void)viewWillAppear:(BOOL)animated {
   [super viewWillAppear:animated];
   
-  _statusBarStyle = [[UIApplication sharedApplication] statusBarStyle];
-#if __IPHONE_OS_VERSION_MAX_ALLOWED > __IPHONE_6_1
-  [[UIApplication sharedApplication] setStatusBarStyle:(self.navigationController.navigationBar.barStyle == UIBarStyleDefault) ? UIStatusBarStyleDefault : UIStatusBarStyleLightContent];
-#else
-  [[UIApplication sharedApplication] setStatusBarStyle:(self.navigationController.navigationBar.barStyle == UIBarStyleDefault) ? UIStatusBarStyleDefault : UIStatusBarStyleBlackOpaque];
-#endif
-  
   [self updateBarButtons];
   
   self.navigationItem.rightBarButtonItem.enabled = [self allRequiredFieldsEntered];
-}
-
-- (void)viewWillDisappear:(BOOL)animated {
-	[super viewWillDisappear:animated];
-  
-  [[UIApplication sharedApplication] setStatusBarStyle:_statusBarStyle];
 }
 
 #pragma mark - Property overrides
@@ -245,7 +234,7 @@
     textField.backgroundColor = [UIColor whiteColor];
     textField.autocorrectionType = UITextAutocorrectionTypeNo;
     textField.autocapitalizationType = UITextAutocapitalizationTypeNone;
-    textField.textAlignment = kBITTextLabelAlignmentLeft;
+    textField.textAlignment = NSTextAlignmentLeft;
     textField.delegate = self;
     textField.tag = indexPath.row;
     
@@ -309,12 +298,33 @@
                                      if(succeeded) {
                                        //controller should dismiss us shortly..
                                      } else {
-                                       UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:nil
-                                                                                           message:error.localizedDescription
-                                                                                          delegate:nil
-                                                                                 cancelButtonTitle:BITHockeyLocalizedString(@"OK")
-                                                                                 otherButtonTitles:nil];
-                                       [alertView show];
+                                       
+                                       // requires iOS 8
+                                       id uialertcontrollerClass = NSClassFromString(@"UIAlertController");
+                                       if (uialertcontrollerClass) {
+                                         UIAlertController *alertController = [UIAlertController alertControllerWithTitle:nil
+                                                                                                                  message:error.localizedDescription
+                                                                                                           preferredStyle:UIAlertControllerStyleAlert];
+                                         
+                                         
+                                         UIAlertAction *okAction = [UIAlertAction actionWithTitle:BITHockeyLocalizedString(@"OK")
+                                                                                                style:UIAlertActionStyleCancel
+                                                                                              handler:^(UIAlertAction * action) {}];
+                                         
+                                         [alertController addAction:okAction];
+                                         
+                                         [self presentViewController:alertController animated:YES completion:nil];
+                                       } else {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+                                         UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:nil
+                                                                                             message:error.localizedDescription
+                                                                                            delegate:nil
+                                                                                   cancelButtonTitle:BITHockeyLocalizedString(@"OK")
+                                                                                   otherButtonTitles:nil];
+                                         [alertView show];
+#pragma clang diagnostic pop
+                                       }
                                        typeof(self) strongSelf = weakSelf;
                                        [strongSelf setLoginUIEnabled:YES];
                                      }
@@ -327,3 +337,5 @@
 }
 
 @end
+
+#endif

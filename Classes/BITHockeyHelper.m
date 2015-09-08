@@ -31,49 +31,58 @@
 #import "BITKeychainUtils.h"
 #import "HockeySDK.h"
 #import "HockeySDKPrivate.h"
+#if !defined (HOCKEYSDK_CONFIGURATION_ReleaseCrashOnly) && !defined (HOCKEYSDK_CONFIGURATION_ReleaseCrashOnlyExtensions)
 #import <QuartzCore/QuartzCore.h>
-#import "tgmath.h"
-
-#if __IPHONE_OS_VERSION_MAX_ALLOWED < 70000
-@interface NSData (BITHockeySDKiOS7)
-- (NSString *)base64Encoding;
-@end
 #endif
-
 
 #pragma mark NSString helpers
 
 NSString *bit_URLEncodedString(NSString *inputString) {
-  return CFBridgingRelease(CFURLCreateStringByAddingPercentEscapes(kCFAllocatorDefault,
-                                                                    (__bridge CFStringRef)inputString,
-                                                                    NULL,
-                                                                    CFSTR("!*'();:@&=+$,/?%#[]"),
-                                                                    kCFStringEncodingUTF8)
-                           );
+
+  // Requires iOS 7
+  // TODO: This is not fully working as expected yet, need to fix for release
+//  if ([inputString respondsToSelector:@selector(stringByAddingPercentEncodingWithAllowedCharacters:)]) {
+//    return [inputString stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLHostAllowedCharacterSet]];
+//  } else {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+    return CFBridgingRelease(CFURLCreateStringByAddingPercentEscapes(kCFAllocatorDefault,
+                                                                     (__bridge CFStringRef)inputString,
+                                                                     NULL,
+                                                                     CFSTR("!*'();:@&=+$,/?%#[]"),
+                                                                     kCFStringEncodingUTF8)
+                             );
+#pragma clang diagnostic pop
+//  }
 }
 
 NSString *bit_URLDecodedString(NSString *inputString) {
-  return CFBridgingRelease(CFURLCreateStringByReplacingPercentEscapesUsingEncoding(kCFAllocatorDefault,
-                                                                                   (__bridge CFStringRef)inputString,
-                                                                                   CFSTR(""),
-                                                                                   kCFStringEncodingUTF8)
-                           );
+  // Requires iOS 7
+  // TODO: This is not fully working as expected yet, need to fix for release
+//  if ([inputString respondsToSelector:@selector(stringByRemovingPercentEncoding)]) {
+//    return [inputString stringByRemovingPercentEncoding];
+//  } else {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+    return CFBridgingRelease(CFURLCreateStringByReplacingPercentEscapesUsingEncoding(kCFAllocatorDefault,
+                                                                                     (__bridge CFStringRef)inputString,
+                                                                                     CFSTR(""),
+                                                                                     kCFStringEncodingUTF8)
+                             );
+#pragma clang diagnostic pop
+//  }
 }
 
 NSString *bit_base64String(NSData * data, unsigned long length) {
-#if __IPHONE_OS_VERSION_MAX_ALLOWED > __IPHONE_6_1
   SEL base64EncodingSelector = NSSelectorFromString(@"base64EncodedStringWithOptions:");
   if ([data respondsToSelector:base64EncodingSelector]) {
     return [data base64EncodedStringWithOptions:0];
   } else {
-#endif
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
     return [data base64Encoding];
 #pragma clang diagnostic pop
-#if __IPHONE_OS_VERSION_MAX_ALLOWED > __IPHONE_6_1
   }
-#endif
 }
 
 NSString *bit_settingsDir(void) {
@@ -290,6 +299,8 @@ BOOL bit_isRunningInAppExtension(void) {
   return isRunningInAppExtension;
 }
 
+#if !defined (HOCKEYSDK_CONFIGURATION_ReleaseCrashOnly) && !defined (HOCKEYSDK_CONFIGURATION_ReleaseCrashOnlyExtensions)
+
 /**
  Find a valid app icon filename that points to a proper app icon image
  
@@ -307,8 +318,8 @@ NSString *bit_validAppIconStringFromIcons(NSBundle *resourceBundle, NSArray *ico
   if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) useiPadIcon = YES;
   
   NSString *currentBestMatch = nil;
-  CGFloat currentBestMatchHeight = 0;
-  CGFloat bestMatchHeight = 0;
+  float currentBestMatchHeight = 0;
+  float bestMatchHeight = 0;
 
   if (bit_isPreiOS7Environment()) {
     bestMatchHeight = useiPadIcon ? (useHighResIcon ? 144 : 72) : (useHighResIcon ? 114 : 57);
@@ -393,7 +404,7 @@ NSString *bit_validAppIconFilename(NSBundle *bundle, NSBundle *resourceBundle) {
 #pragma mark UIImage private helpers
 
 static void bit_addRoundedRectToPath(CGRect rect, CGContextRef context, CGFloat ovalWidth, CGFloat ovalHeight);
-static CGContextRef bit_MyOpenBitmapContext(CGFloat pixelsWide, CGFloat pixelsHigh);
+static CGContextRef bit_MyOpenBitmapContext(int pixelsWide, int pixelsHigh);
 static CGImageRef bit_CreateGradientImage(int pixelsWide, int pixelsHigh, float fromAlpha, float toAlpha);
 static BOOL bit_hasAlpha(UIImage *inputImage);
 UIImage *bit_imageWithAlpha(UIImage *inputImage);
@@ -455,7 +466,7 @@ CGImageRef bit_CreateGradientImage(int pixelsWide, int pixelsHigh, float fromAlp
   return theCGImage;
 }
 
-CGContextRef bit_MyOpenBitmapContext(CGFloat pixelsWide, CGFloat pixelsHigh) {
+CGContextRef bit_MyOpenBitmapContext(int pixelsWide, int pixelsHigh) {
   CGSize size = CGSizeMake(pixelsWide, pixelsHigh);
   UIGraphicsBeginImageContextWithOptions(size, NO, 0.0);
   
@@ -479,8 +490,8 @@ UIImage *bit_imageWithAlpha(UIImage *inputImage) {
   }
   
   CGImageRef imageRef = inputImage.CGImage;
-  size_t width = (size_t)(CGImageGetWidth(imageRef) * inputImage.scale);
-  size_t height = (size_t)(CGImageGetHeight(imageRef) * inputImage.scale);
+  size_t width = CGImageGetWidth(imageRef) * inputImage.scale;
+  size_t height = CGImageGetHeight(imageRef) * inputImage.scale;
   
   // The bitsPerComponent and bitmapInfo values are hard-coded to prevent an "unsupported parameter combination" error
   CGContextRef offscreenContext = CGBitmapContextCreate(NULL,
@@ -524,21 +535,21 @@ UIImage *bit_imageToFitSize(UIImage *inputImage, CGSize fitSize, BOOL honorScale
     return nil;
   }
   
-	CGFloat imageScaleFactor = 1.0;
+	float imageScaleFactor = 1.0;
   if (honorScaleFactor) {
     if ([inputImage respondsToSelector:@selector(scale)]) {
       imageScaleFactor = [inputImage scale];
     }
   }
   
-  CGFloat sourceWidth = [inputImage size].width * imageScaleFactor;
-  CGFloat sourceHeight = [inputImage size].height * imageScaleFactor;
-  CGFloat targetWidth = fitSize.width;
-  CGFloat targetHeight = fitSize.height;
+  float sourceWidth = [inputImage size].width * imageScaleFactor;
+  float sourceHeight = [inputImage size].height * imageScaleFactor;
+  float targetWidth = fitSize.width;
+  float targetHeight = fitSize.height;
   
   // Calculate aspect ratios
-  CGFloat sourceRatio = sourceWidth / sourceHeight;
-  CGFloat targetRatio = targetWidth / targetHeight;
+  float sourceRatio = sourceWidth / sourceHeight;
+  float targetRatio = targetWidth / targetHeight;
   
   // Determine what side of the source image to use for proportional scaling
   BOOL scaleWidth = (sourceRatio <= targetRatio);
@@ -546,9 +557,9 @@ UIImage *bit_imageToFitSize(UIImage *inputImage, CGSize fitSize, BOOL honorScale
   scaleWidth = !scaleWidth;
   
   // Proportionally scale source image
-  CGFloat scalingFactor, scaledWidth, scaledHeight;
+  float scalingFactor, scaledWidth, scaledHeight;
   if (scaleWidth) {
-    scalingFactor = 1.0f / sourceRatio;
+    scalingFactor = 1.0 / sourceRatio;
     scaledWidth = targetWidth;
     scaledHeight = round(targetWidth * scalingFactor);
   } else {
@@ -575,7 +586,7 @@ UIImage *bit_imageToFitSize(UIImage *inputImage, CGSize fitSize, BOOL honorScale
 	if (!image) {
     // Try older method.
     CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
-    CGContextRef context = CGBitmapContextCreate(NULL,  (size_t)scaledWidth, (size_t)scaledHeight, 8, (size_t)(fitSize.width * 4),
+    CGContextRef context = CGBitmapContextCreate(NULL,  scaledWidth, scaledHeight, 8, (fitSize.width * 4),
                                                  colorSpace, (CGBitmapInfo)kCGImageAlphaPremultipliedLast);
     sourceImg = CGImageCreateWithImageInRect([inputImage CGImage], sourceRect);
     CGContextDrawImage(context, destRect, sourceImg);
@@ -596,7 +607,7 @@ UIImage *bit_reflectedImageWithHeight(UIImage *inputImage, NSUInteger height, fl
     return nil;
   
   // create a bitmap graphics context the size of the image
-  CGContextRef mainViewContentContext = bit_MyOpenBitmapContext(inputImage.size.width, (CGFloat)height);
+  CGContextRef mainViewContentContext = bit_MyOpenBitmapContext(inputImage.size.width, (int)height);
   
   // create a 2 bit CGImage containing a gradient that will be used for masking the
   // main view content to create the 'fade' of the reflection.  The CGImageCreateWithMask
@@ -647,8 +658,6 @@ UIImage *bit_imageNamed(NSString *imageName, NSString *bundleName) {
   return bit_imageWithContentsOfResolutionIndependentFile(imagePath);
 }
 
-
-
 // Creates a copy of this image with rounded corners
 // If borderSize is non-zero, a transparent border of the given size will also be added
 // Original author: Björn Sållarp. Used with permission. See: http://blog.sallarp.com/iphone-uiimage-round-corners/
@@ -678,8 +687,8 @@ UIImage *bit_roundedCornerImage(UIImage *inputImage, CGFloat cornerSize, CGFloat
     
     // Build a context that's the same dimensions as the new size
     context = CGBitmapContextCreate(NULL,
-                                    (size_t)image.size.width,
-                                    (size_t)image.size.height,
+                                    image.size.width,
+                                    image.size.height,
                                     CGImageGetBitsPerComponent(image.CGImage),
                                     0,
                                     CGImageGetColorSpace(image.CGImage),
@@ -796,12 +805,12 @@ UIImage *bit_screenshot(void) {
       
       if (needsRotation) {
         if (isLandscapeLeft) {
-          CGContextConcatCTM(context, CGAffineTransformRotate(CGAffineTransformMakeTranslation( imageSize.width, 0), (CGFloat)M_PI / 2.0f));
+          CGContextConcatCTM(context, CGAffineTransformRotate(CGAffineTransformMakeTranslation( imageSize.width, 0), M_PI / 2.0));
         } else if (isLandscapeRight) {
-          CGContextConcatCTM(context, CGAffineTransformRotate(CGAffineTransformMakeTranslation( 0, imageSize.height), 3.0f * (CGFloat)M_PI / 2.0f));
+          CGContextConcatCTM(context, CGAffineTransformRotate(CGAffineTransformMakeTranslation( 0, imageSize.height), 3 * M_PI / 2.0));
         }
       } else if (isUpsideDown) {
-        CGContextConcatCTM(context, CGAffineTransformRotate(CGAffineTransformMakeTranslation( imageSize.width, imageSize.height), (CGFloat)(M_PI)));
+        CGContextConcatCTM(context, CGAffineTransformRotate(CGAffineTransformMakeTranslation( imageSize.width, imageSize.height), M_PI));
       }
       
       if ([window respondsToSelector:@selector(drawViewHierarchyInRect:afterScreenUpdates:)]) {
@@ -823,3 +832,5 @@ UIImage *bit_screenshot(void) {
   
   return image;
 }
+
+#endif
