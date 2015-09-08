@@ -27,6 +27,9 @@
  */
 
 #import "HockeySDK.h"
+
+#if HOCKEYSDK_FEATURE_FEEDBACK
+
 #import "HockeySDKPrivate.h"
 
 #import "BITFeedbackListViewCell.h"
@@ -373,3 +376,5 @@
 
 
 @end
+
+#endif

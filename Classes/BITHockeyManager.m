@@ -30,7 +30,9 @@
 #import "HockeySDK.h"
 #import "HockeySDKPrivate.h"
 
+#if HOCKEYSDK_FEATURE_CRASH_REPORTER || HOCKEYSDK_FEATURE_FEEDBACK || HOCKEYSDK_FEATURE_UPDATES || HOCKEYSDK_FEATURE_AUTHENTICATOR || HOCKEYSDK_FEATURE_STORE_UPDATES
 #import "BITHockeyBaseManagerPrivate.h"
+#endif
 
 #import "BITHockeyHelper.h"
 #import "BITHockeyAppClient.h"
@@ -140,18 +142,27 @@ bitstadium_info_t bitstadium_library_info __attribute__((section("__TEXT,__bit_h
     
     _hockeyAppClient = nil;
     
+#if HOCKEYSDK_FEATURE_CRASH_REPORTER
     _disableCrashManager = NO;
+#endif
+#if HOCKEYSDK_FEATURE_UPDATES
     _disableUpdateManager = NO;
+#endif
+#if HOCKEYSDK_FEATURE_FEEDBACK
     _disableFeedbackManager = NO;
+#endif
 
+#if HOCKEYSDK_FEATURE_STORE_UPDATES
     _enableStoreUpdateManager = NO;
+#endif
     
     _appStoreEnvironment = NO;
     _startManagerIsInvoked = NO;
     _startUpdateManagerIsInvoked = NO;
     
     _liveIdentifier = nil;
-    _installString = bit_appAnonID();
+    _installString = bit_appAnonID(NO);
+    _disableInstallTracking = NO;
     
 #if !TARGET_IPHONE_SIMULATOR
     // check if we are really in an app store environment
@@ -219,6 +230,10 @@ bitstadium_info_t bitstadium_library_info __attribute__((section("__TEXT,__bit_h
   
   if (![self isSetUpOnMainThread]) return;
   
+  if ([self isAppStoreEnvironment] && [self isInstallTrackingDisabled]) {
+    _installString = bit_appAnonID(YES);
+  }
+
   BITHockeyLog(@"INFO: Starting HockeyManager");
   _startManagerIsInvoked = YES;
   
@@ -346,42 +361,45 @@ bitstadium_info_t bitstadium_library_info __attribute__((section("__TEXT,__bit_h
 
 
 - (void)setDelegate:(id<BITHockeyManagerDelegate>)delegate {
-  typeof(delegate) strongNewDelegate = delegate;
-  typeof(_delegate) strongOriginalDelegate = _delegate;
-  
   if (![self isAppStoreEnvironment]) {
     if (_startManagerIsInvoked) {
       NSLog(@"[HockeySDK] ERROR: The `delegate` property has to be set before calling [[BITHockeyManager sharedHockeyManager] startManager] !");
     }
   }
   
-  if (strongOriginalDelegate != strongNewDelegate) {
-    _delegate = strongNewDelegate;
+  if (_delegate != delegate) {
+    _delegate = delegate;
     
 #if HOCKEYSDK_FEATURE_CRASH_REPORTER
     if (_crashManager) {
-      _crashManager.delegate = strongNewDelegate;
+      _crashManager.delegate = _delegate;
     }
 #endif /* HOCKEYSDK_FEATURE_CRASH_REPORTER */
     
 #if HOCKEYSDK_FEATURE_UPDATES
     if (_updateManager) {
-      _updateManager.delegate = strongNewDelegate;
+      _updateManager.delegate = _delegate;
     }
 #endif /* HOCKEYSDK_FEATURE_UPDATES */
     
 #if HOCKEYSDK_FEATURE_FEEDBACK
     if (_feedbackManager) {
-      _feedbackManager.delegate = strongNewDelegate;
+      _feedbackManager.delegate = _delegate;
     }
 #endif /* HOCKEYSDK_FEATURE_FEEDBACK */
     
-#if HOCKEYSDK_FEATURE_AUTHENTICATOR
-    if (_authenticator) {
-      _authenticator.delegate = strongNewDelegate;
+#if HOCKEYSDK_FEATURE_STORE_UPDATES
+    if (_storeUpdateManager) {
+      _storeUpdateManager.delegate = _delegate;
     }
-#endif /* HOCKEYSDK_FEATURE_AUTHENTICATOR */
+#endif /* HOCKEYSDK_FEATURE_STORE_UPDATES */
   }
+  
+#if HOCKEYSDK_FEATURE_AUTHENTICATOR
+  if (_authenticator) {
+    _authenticator.delegate = _delegate;
+  }
+#endif /* HOCKEYSDK_FEATURE_AUTHENTICATOR */
 }
 
 - (void)modifyKeychainUserValue:(NSString *)value forKey:(NSString *)key {
@@ -591,9 +609,8 @@ bitstadium_info_t bitstadium_library_info __attribute__((section("__TEXT,__bit_h
 
 - (BOOL)shouldUseLiveIdentifier {
   BOOL delegateResult = NO;
-  typeof(self.delegate) strongDelegate = _delegate;
-  if ([strongDelegate respondsToSelector:@selector(shouldUseLiveIdentifierForHockeyManager:)]) {
-    delegateResult = [(NSObject <BITHockeyManagerDelegate>*)strongDelegate shouldUseLiveIdentifierForHockeyManager:self];
+  if ([_delegate respondsToSelector:@selector(shouldUseLiveIdentifierForHockeyManager:)]) {
+    delegateResult = [(NSObject <BITHockeyManagerDelegate>*)_delegate shouldUseLiveIdentifierForHockeyManager:self];
   }
 
   return (delegateResult) || (_appStoreEnvironment);
@@ -611,38 +628,37 @@ bitstadium_info_t bitstadium_library_info __attribute__((section("__TEXT,__bit_h
   
   _startManagerIsInvoked = NO;
   
-  typeof(self.delegate) strongDelegate = _delegate;
-
   if (_validAppIdentifier) {
 #if HOCKEYSDK_FEATURE_CRASH_REPORTER
     BITHockeyLog(@"INFO: Setup CrashManager");
     _crashManager = [[BITCrashManager alloc] initWithAppIdentifier:_appIdentifier isAppStoreEnvironment:_appStoreEnvironment];
     _crashManager.hockeyAppClient = [self hockeyAppClient];
-    _crashManager.delegate = strongDelegate;
+    _crashManager.delegate = _delegate;
 #endif /* HOCKEYSDK_FEATURE_CRASH_REPORTER */
     
 #if HOCKEYSDK_FEATURE_UPDATES
     BITHockeyLog(@"INFO: Setup UpdateManager");
     _updateManager = [[BITUpdateManager alloc] initWithAppIdentifier:_appIdentifier isAppStoreEnvironment:_appStoreEnvironment];
-    _updateManager.delegate = strongDelegate;
+    _updateManager.delegate = _delegate;
 #endif /* HOCKEYSDK_FEATURE_UPDATES */
 
 #if HOCKEYSDK_FEATURE_STORE_UPDATES
     BITHockeyLog(@"INFO: Setup StoreUpdateManager");
     _storeUpdateManager = [[BITStoreUpdateManager alloc] initWithAppIdentifier:_appIdentifier isAppStoreEnvironment:_appStoreEnvironment];
+    _storeUpdateManager.delegate = _delegate;
 #endif /* HOCKEYSDK_FEATURE_STORE_UPDATES */
     
 #if HOCKEYSDK_FEATURE_FEEDBACK
     BITHockeyLog(@"INFO: Setup FeedbackManager");
     _feedbackManager = [[BITFeedbackManager alloc] initWithAppIdentifier:_appIdentifier isAppStoreEnvironment:_appStoreEnvironment];
-    _feedbackManager.delegate = strongDelegate;
+    _feedbackManager.delegate = _delegate;
 #endif /* HOCKEYSDK_FEATURE_FEEDBACK */
 
 #if HOCKEYSDK_FEATURE_AUTHENTICATOR
     BITHockeyLog(@"INFO: Setup Authenticator");
     _authenticator = [[BITAuthenticator alloc] initWithAppIdentifier:_appIdentifier isAppStoreEnvironment:_appStoreEnvironment];
     _authenticator.hockeyAppClient = [self hockeyAppClient];
-      _authenticator.delegate = strongDelegate;
+    _authenticator.delegate = _delegate;
 #endif /* HOCKEYSDK_FEATURE_AUTHENTICATOR */
 
     if (![self isAppStoreEnvironment]) {
