@@ -195,21 +195,23 @@
 }
 
 - (void)updateList {
-  CGSize contentSize = self.tableView.contentSize;
-  CGPoint contentOffset = self.tableView.contentOffset;
-  
-  [self refreshPreviewItems];
-  [self.tableView reloadData];
-  
-  if (contentSize.height > 0 &&
-      self.tableView.contentSize.height > self.tableView.frame.size.height &&
-      self.tableView.contentSize.height > contentSize.height &&
-      ![self isRefreshingWithNewControl])
-    [self.tableView setContentOffset:CGPointMake(contentOffset.x, self.tableView.contentSize.height - contentSize.height + contentOffset.y) animated:NO];
-  
-  [self stopLoadingIndicator];
-  
-  [self.tableView flashScrollIndicators];
+  dispatch_async(dispatch_get_main_queue(), ^{
+    CGSize contentSize = self.tableView.contentSize;
+    CGPoint contentOffset = self.tableView.contentOffset;
+    
+    [self refreshPreviewItems];
+    [self.tableView reloadData];
+    
+    if (contentSize.height > 0 &&
+        self.tableView.contentSize.height > self.tableView.frame.size.height &&
+        self.tableView.contentSize.height > contentSize.height &&
+        ![self isRefreshingWithNewControl])
+      [self.tableView setContentOffset:CGPointMake(contentOffset.x, self.tableView.contentSize.height - contentSize.height + contentOffset.y) animated:NO];
+    
+    [self stopLoadingIndicator];
+    
+    [self.tableView flashScrollIndicators];
+  });
 }
 
 - (void)viewDidAppear:(BOOL)animated {
@@ -427,10 +429,9 @@
     [self dismissViewControllerAnimated:YES completion:^(void){}];
   }
   
-  if (self.manager.delegate &&
-      [self.manager.delegate respondsToSelector:@selector(feedbackComposeViewController:didFinishWithResult:)]) {
+  if ([self.manager.delegate respondsToSelector:@selector(feedbackComposeViewController:didFinishWithResult:)]) {
     [self.manager.delegate feedbackComposeViewController:composeViewController didFinishWithResult:composeResult];
-  } else if (self.manager.delegate && [self.manager.delegate respondsToSelector:@selector(feedbackComposeViewControllerDidFinish:)]) {
+  } else if ([self.manager.delegate respondsToSelector:@selector(feedbackComposeViewControllerDidFinish:)]) {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated"
     [self.manager.delegate feedbackComposeViewControllerDidFinish:composeViewController];

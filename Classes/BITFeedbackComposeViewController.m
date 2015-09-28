@@ -244,7 +244,8 @@
   [self.addPhotoButton setTitleColor:[UIColor lightGrayColor] forState:UIControlStateDisabled];
   self.addPhotoButton.frame = CGRectMake(0, 0, CGRectGetWidth(self.view.frame), 44);
   [self.addPhotoButton addTarget:self action:@selector(addPhotoAction:) forControlEvents:UIControlEventTouchUpInside];
-  
+  self.addPhotoButton.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin|UIViewAutoresizingFlexibleRightMargin;
+
   [self.textAccessoryView addSubview:self.addPhotoButton];
   
   if (!self.hideImageAttachmentButton) {
@@ -357,6 +358,8 @@
   }
   
   if (!alreadySetup) {
+    CGSize tempTextViewSize = CGSizeMake(self.contentViewContainer.frame.size.width, self.contentViewContainer.frame.size.height);
+    textViewFrame.size = tempTextViewSize;
     textViewFrame.size.width -= scrollViewWidth;
     // height has to be identical to the textview!
     scrollViewFrame = CGRectMake(CGRectGetMaxX(textViewFrame), self.view.frame.origin.y, scrollViewWidth, CGRectGetHeight(self.textView.bounds));
@@ -478,13 +481,12 @@
 }
 
 - (void)dismissWithResult:(BITFeedbackComposeResult) result {
-  typeof(self.delegate) strongDelegate = self.delegate;
-  if(strongDelegate && [strongDelegate respondsToSelector:@selector(feedbackComposeViewController:didFinishWithResult:)]) {
-    [strongDelegate feedbackComposeViewController:self didFinishWithResult:result];
-  } else if (strongDelegate && [strongDelegate respondsToSelector:@selector(feedbackComposeViewControllerDidFinish:)]) {
+  if([self.delegate respondsToSelector:@selector(feedbackComposeViewController:didFinishWithResult:)]) {
+    [self.delegate feedbackComposeViewController:self didFinishWithResult:result];
+  } else if ([self.delegate respondsToSelector:@selector(feedbackComposeViewControllerDidFinish:)]) {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated"
-    [strongDelegate feedbackComposeViewControllerDidFinish:self];
+    [self.delegate feedbackComposeViewControllerDidFinish:self];
 #pragma clang diagnostic pop
   } else {
     [self dismissViewControllerAnimated:YES completion:nil];

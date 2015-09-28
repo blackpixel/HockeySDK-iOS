@@ -1,0 +1,5 @@
+export BUILT_PRODUCTS_DIR="/Users/rudy/Library/Developer/Xcode/DerivedData/NetNewsWireIOS-byoxhdgsltltxrfqoknwfzzlephc/Build/Products/Debug-iphoneos"
+export CURRENT_ARCH="arm64"
+export OBJECT_FILE_DIR_normal="/Users/rudy/Library/Developer/Xcode/DerivedData/NetNewsWireIOS-byoxhdgsltltxrfqoknwfzzlephc/Build/Intermediates/HockeySDK.build/Debug-iphoneos/HockeySDK.build/Objects-normal"
+export OBJROOT="/Users/rudy/Library/Developer/Xcode/DerivedData/NetNewsWireIOS-byoxhdgsltltxrfqoknwfzzlephc/Build/Intermediates"
+export SRCROOT="/Users/rudy/Desktop/blackpixel/nnwios/dependencies/thirdparty/hockey/Support"

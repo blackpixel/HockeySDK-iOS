@@ -138,9 +138,8 @@ typedef NS_ENUM(NSInteger, BITUpdateAlertViewTag) {
     // we only care about iOS 8 or later
     if (bit_isPreiOS8Environment()) return;
     
-    typeof(self.delegate) strongDelegate = self.delegate;
-    if (strongDelegate != nil && [strongDelegate respondsToSelector:@selector(updateManagerWillExitApp:)]) {
-      [strongDelegate updateManagerWillExitApp:self];
+    if ([self.delegate respondsToSelector:@selector(updateManagerWillExitApp:)]) {
+      [self.delegate updateManagerWillExitApp:self];
     }
     
 #if HOCKEYSDK_FEATURE_CRASH_REPORTER
@@ -242,9 +241,8 @@ typedef NS_ENUM(NSInteger, BITUpdateAlertViewTag) {
   
   BOOL shouldShowDefaultAlert = YES;
   
-  typeof(self.delegate) strongDelegate = self.delegate;
-  if (strongDelegate != nil && [strongDelegate respondsToSelector:@selector(shouldDisplayExpiryAlertForUpdateManager:)]) {
-    shouldShowDefaultAlert = [strongDelegate shouldDisplayExpiryAlertForUpdateManager:self];
+  if ([self.delegate respondsToSelector:@selector(shouldDisplayExpiryAlertForUpdateManager:)]) {
+    shouldShowDefaultAlert = [self.delegate shouldDisplayExpiryAlertForUpdateManager:self];
   }
   
   if (shouldShowDefaultAlert) {
@@ -253,8 +251,8 @@ typedef NS_ENUM(NSInteger, BITUpdateAlertViewTag) {
       _blockingScreenMessage = [NSString stringWithFormat:BITHockeyLocalizedString(@"UpdateExpired"), appName];
     [self showBlockingScreen:_blockingScreenMessage image:@"authorize_denied.png"];
 
-    if (strongDelegate != nil && [strongDelegate respondsToSelector:@selector(didDisplayExpiryAlertForUpdateManager:)]) {
-      [strongDelegate didDisplayExpiryAlertForUpdateManager:self];
+    if ([self.delegate respondsToSelector:@selector(didDisplayExpiryAlertForUpdateManager:)]) {
+      [self.delegate didDisplayExpiryAlertForUpdateManager:self];
     }
     
     // the UI is now blocked, make sure we don't add our UI on top of it over and over again
@@ -885,7 +883,7 @@ typedef NS_ENUM(NSInteger, BITUpdateAlertViewTag) {
   id nsurlsessionClass = NSClassFromString(@"NSURLSessionDataTask");
   if (nsurlsessionClass && !bit_isRunningInAppExtension()) {
     NSURLSessionConfiguration *sessionConfiguration = [NSURLSessionConfiguration defaultSessionConfiguration];
-    NSURLSession *session = [NSURLSession sessionWithConfiguration:sessionConfiguration delegate:self delegateQueue:nil];
+    NSURLSession *session = [NSURLSession sessionWithConfiguration:sessionConfiguration delegate:(id<NSURLSessionDelegate>)self delegateQueue:nil];
     
     NSURLSessionDataTask *sessionTask = [session dataTaskWithRequest:request];
     if (!sessionTask) {
@@ -960,9 +958,8 @@ typedef NS_ENUM(NSInteger, BITUpdateAlertViewTag) {
   NSString *iOSUpdateURL = [NSString stringWithFormat:@"itms-services://?action=download-manifest&url=%@", bit_URLEncodedString(hockeyAPIURL)];
 
   // Notify delegate of update intent before placing the call
-  typeof(self.delegate) strongDelegate = self.delegate;
-  if (strongDelegate != nil && [strongDelegate respondsToSelector:@selector(willStartDownloadAndUpdate:)]) {
-    [strongDelegate willStartDownloadAndUpdate:self];
+  if ([self.delegate respondsToSelector:@selector(willStartDownloadAndUpdate:)]) {
+    [self.delegate willStartDownloadAndUpdate:self];
   }
 
   BITHockeyLog(@"INFO: API Server Call: %@, calling iOS with %@", hockeyAPIURL, iOSUpdateURL);
@@ -984,9 +981,8 @@ typedef NS_ENUM(NSInteger, BITUpdateAlertViewTag) {
     
     BITHockeyLog(@"INFO: Starting UpdateManager");
     
-    typeof(self.delegate) strongDelegate = self.delegate;
-    if (strongDelegate != nil && [strongDelegate respondsToSelector:@selector(updateManagerShouldSendUsageData:)]) {
-      _sendUsageData = [strongDelegate updateManagerShouldSendUsageData:self];
+    if ([self.delegate respondsToSelector:@selector(updateManagerShouldSendUsageData:)]) {
+      _sendUsageData = [self.delegate updateManagerShouldSendUsageData:self];
     }
     
     [self checkExpiryDateReached];

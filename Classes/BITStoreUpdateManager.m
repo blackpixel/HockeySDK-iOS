@@ -293,9 +293,8 @@
   }
   
   if ([self isUpdateAvailable]) {
-    typeof(self.delegate) strongDelegate = self.delegate;
-    if (strongDelegate && [strongDelegate respondsToSelector:@selector(detectedUpdateFromStoreUpdateManager:newVersion:storeURL:)]) {
-      [strongDelegate detectedUpdateFromStoreUpdateManager:self newVersion:_newStoreVersion storeURL:[NSURL URLWithString:_appStoreURLString]];
+    if ([self.delegate respondsToSelector:@selector(detectedUpdateFromStoreUpdateManager:newVersion:storeURL:)]) {
+      [self.delegate detectedUpdateFromStoreUpdateManager:self newVersion:_newStoreVersion storeURL:[NSURL URLWithString:_appStoreURLString]];
     }
     
     if (self.updateUIEnabled && BITHockeyBundle()) {

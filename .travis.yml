@@ -8,7 +8,6 @@ env:
     - CONFIGURATION="DEBUG"
 
   matrix:
-    - SCHEME="HockeySDK"             DESTINATION="OS=7.1,name=iPad 2"                   RUN_TESTS="YES"
     - SCHEME="HockeySDK"             DESTINATION="OS=8.1,name=iPhone 5"                 RUN_TESTS="YES"
     - SCHEME="HockeySDK"             DESTINATION="OS=8.4,name=iPhone 6"                 RUN_TESTS="YES"
     - SCHEME="HockeySDK"             DESTINATION="OS=9.0,name=iPad Air"                 RUN_TESTS="YES"
@@ -17,6 +16,7 @@ env:
     - SCHEME="HockeySDK Distribution"                                                   RUN_TESTS="NO"
 
 before_install:
+  - xcrun simctl list
   - gem install cocoapods --no-rdoc --no-ri --no-document --quiet
   - gem install xcpretty --no-rdoc --no-ri --no-document --quiet
   - brew tap homebrew/versions
@@ -27,7 +27,8 @@ script:
   - set -o pipefail
   - COMMAND="xcodebuild -project '$PROJECT' -scheme '$SCHEME' -sdk '$SDK' -configuration '$CONFIGURATION'"
   - if [ $RUN_TESTS == "YES" ]; then
-      COMMAND+=" -destination '$DESTINATION' clean test";
+      COMMAND+=" -destination '$DESTINATION' XCODEBUILD_GCC_PREPROCESSOR_DEFINITIONS="CI=1" clean test";
     fi
   - COMMAND+=" | xcpretty -c"
+  - echo $COMMAND
   - eval $COMMAND

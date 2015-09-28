@@ -40,6 +40,7 @@
 #import "BITFeedbackManagerPrivate.h"
 #import "BITHockeyBaseManagerPrivate.h"
 
+#import "HockeySDKNullability.h"
 #import "BITHockeyHelper.h"
 #import "BITHockeyAppClient.h"
 
@@ -279,8 +280,7 @@ NSString *const kBITFeedbackUpdateAttachmentThumbnail = @"BITFeedbackUpdateAttac
 
 - (BOOL)allowFetchingNewMessages {
   BOOL fetchNewMessages = YES;
-  if ([BITHockeyManager sharedHockeyManager].delegate &&
-      [[BITHockeyManager sharedHockeyManager].delegate respondsToSelector:@selector(allowAutomaticFetchingForNewFeedbackForManager:)]) {
+  if ([[BITHockeyManager sharedHockeyManager].delegate respondsToSelector:@selector(allowAutomaticFetchingForNewFeedbackForManager:)]) {
     fetchNewMessages = [[BITHockeyManager sharedHockeyManager].delegate
                         allowAutomaticFetchingForNewFeedbackForManager:self];
   }
@@ -307,12 +307,10 @@ NSString *const kBITFeedbackUpdateAttachmentThumbnail = @"BITFeedbackUpdateAttac
 
 - (BOOL)updateUserIDUsingKeychainAndDelegate {
   BOOL availableViaDelegate = NO;
-  typeof([BITHockeyManager sharedHockeyManager].delegate) strongDelegate = [BITHockeyManager sharedHockeyManager].delegate;
   NSString *userID = [self stringValueFromKeychainForKey:kBITHockeyMetaUserID];
   
-  if (strongDelegate &&
-      [strongDelegate respondsToSelector:@selector(userIDForHockeyManager:componentManager:)]) {
-    userID = [strongDelegate
+  if ([[BITHockeyManager sharedHockeyManager].delegate respondsToSelector:@selector(userIDForHockeyManager:componentManager:)]) {
+    userID = [[BITHockeyManager sharedHockeyManager].delegate
               userIDForHockeyManager:[BITHockeyManager sharedHockeyManager]
               componentManager:self];
   }
@@ -329,11 +327,9 @@ NSString *const kBITFeedbackUpdateAttachmentThumbnail = @"BITFeedbackUpdateAttac
   BOOL availableViaDelegate = NO;
   
   NSString *userName = [self stringValueFromKeychainForKey:kBITHockeyMetaUserName];
-  typeof([BITHockeyManager sharedHockeyManager].delegate) strongDelegate = [BITHockeyManager sharedHockeyManager].delegate;
   
-  if (strongDelegate &&
-      [strongDelegate respondsToSelector:@selector(userNameForHockeyManager:componentManager:)]) {
-    userName = [strongDelegate
+  if ([[BITHockeyManager sharedHockeyManager].delegate respondsToSelector:@selector(userNameForHockeyManager:componentManager:)]) {
+    userName = [[BITHockeyManager sharedHockeyManager].delegate
                 userNameForHockeyManager:[BITHockeyManager sharedHockeyManager]
                 componentManager:self];
   }
@@ -351,11 +347,9 @@ NSString *const kBITFeedbackUpdateAttachmentThumbnail = @"BITFeedbackUpdateAttac
   BOOL availableViaDelegate = NO;
   
   NSString *userEmail = [self stringValueFromKeychainForKey:kBITHockeyMetaUserEmail];
-  typeof([BITHockeyManager sharedHockeyManager].delegate) strongDelegate = [BITHockeyManager sharedHockeyManager].delegate;
   
-  if (strongDelegate &&
-      [strongDelegate respondsToSelector:@selector(userEmailForHockeyManager:componentManager:)]) {
-    userEmail = [strongDelegate
+  if ([[BITHockeyManager sharedHockeyManager].delegate respondsToSelector:@selector(userEmailForHockeyManager:componentManager:)]) {
+    userEmail = [[BITHockeyManager sharedHockeyManager].delegate
                  userEmailForHockeyManager:[BITHockeyManager sharedHockeyManager]
                  componentManager:self];
   }
@@ -805,14 +799,38 @@ NSString *const kBITFeedbackUpdateAttachmentThumbnail = @"BITFeedbackUpdateAttac
         }
         
         if(self.showAlertOnIncomingMessages && !self.currentFeedbackListViewController && !self.currentFeedbackComposeViewController) {
-          UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:BITHockeyLocalizedString(@"HockeyFeedbackNewMessageTitle")
-                                                              message:BITHockeyLocalizedString(@"HockeyFeedbackNewMessageText")
-                                                             delegate:self
-                                                    cancelButtonTitle:BITHockeyLocalizedString(@"HockeyFeedbackIgnore")
-                                                    otherButtonTitles:BITHockeyLocalizedString(@"HockeyFeedbackShow"), nil
-                                    ];
-          [alertView setTag:0];
-          [alertView show];
+          // Requires iOS 8
+          id uialertcontrollerClass = NSClassFromString(@"UIAlertController");
+          if (uialertcontrollerClass) {
+            UIAlertController *alertController = [UIAlertController alertControllerWithTitle:BITHockeyLocalizedString(@"HockeyFeedbackNewMessageTitle")
+                                                                                     message:BITHockeyLocalizedString(@"HockeyFeedbackNewMessageText")
+                                                                              preferredStyle:UIAlertControllerStyleAlert];
+            
+            UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:BITHockeyLocalizedString(@"HockeyFeedbackIgnore")
+                                                                   style:UIAlertActionStyleCancel
+                                                                 handler:nil];
+            UIAlertAction *showAction = [UIAlertAction actionWithTitle:BITHockeyLocalizedString(@"HockeyFeedbackShow")
+                                                                 style:UIAlertActionStyleDefault
+                                                               handler:^(UIAlertAction *__nonnull action) {
+                                                                 [self showFeedbackListView];
+                                                               }];
+            [alertController addAction:cancelAction];
+            [alertController addAction:showAction];
+            
+            [self showAlertController:alertController];
+          } else {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+            UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:BITHockeyLocalizedString(@"HockeyFeedbackNewMessageTitle")
+                                                                message:BITHockeyLocalizedString(@"HockeyFeedbackNewMessageText")
+                                                               delegate:self
+                                                      cancelButtonTitle:BITHockeyLocalizedString(@"HockeyFeedbackIgnore")
+                                                      otherButtonTitles:BITHockeyLocalizedString(@"HockeyFeedbackShow"), nil
+                                      ];
+            [alertView setTag:0];
+            [alertView show];
+#pragma clang diagnostic pop
+          }
           _incomingMessagesAlertShowing = YES;
         }
       }
