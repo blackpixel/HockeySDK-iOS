@@ -197,6 +197,9 @@
     if ([indexPath row] == 0 && [strongManager requireUserName] != BITFeedbackUserDataElementDontShow) {
       textField.placeholder = BITHockeyLocalizedString(@"HockeyFeedbackUserDataNamePlaceHolder");
       textField.text = self.name;
+      if (self.manager.requireUserName == BITFeedbackUserDataElementRequired) {
+        textField.accessibilityHint = BITHockeyLocalizedString(@"HockeyAccessibilityHintRequired");
+      }
       
       textField.keyboardType = UIKeyboardTypeDefault;
       if ([strongManager requireUserEmail])
@@ -209,6 +212,9 @@
     } else {
       textField.placeholder = BITHockeyLocalizedString(@"HockeyFeedbackUserDataEmailPlaceholder");
       textField.text = self.email;
+      if (self.manager.requireUserEmail == BITFeedbackUserDataElementRequired) {
+        textField.accessibilityHint = BITHockeyLocalizedString(@"HockeyAccessibilityHintRequired");
+      }
       
       textField.keyboardType = UIKeyboardTypeEmailAddress;
       textField.returnKeyType = UIReturnKeyDone;

@@ -59,24 +59,18 @@
   
   NSMutableArray *_cells;
   
-  BOOL _isAppStoreEnvironment;
+  BITEnvironment _appEnvironment;
 }
 
 
 #pragma mark - Private
 
 - (UIColor *)backgroundColor {
-  typeof(self.updateManager) strongManager = self.updateManager;
-  if ([strongManager isPreiOS7Environment]) {
-    return BIT_RGBCOLOR(235, 235, 235);
-  } else {
-    return BIT_RGBCOLOR(255, 255, 255);
-  }
+  return BIT_RGBCOLOR(255, 255, 255);
 }
 
 - (void)restoreStoreButtonStateAnimated:(BOOL)animated {
-  typeof(self.updateManager) strongManager = self.updateManager;
-  if (_isAppStoreEnvironment) {
+  if (_appEnvironment == BITEnvironmentAppStore) {
     [self setAppStoreButtonState:AppStoreButtonStateOffline animated:animated];
   } else if ([strongManager isUpdateAvailable]) {
     [self setAppStoreButtonState:AppStoreButtonStateUpdate animated:animated];
@@ -123,10 +117,8 @@
     tableViewContentHeight += [self tableView:self.tableView heightForRowAtIndexPath:[NSIndexPath indexPathForRow:i inSection:0]];
   }
   tableViewContentHeight += self.tableView.tableHeaderView.frame.size.height;
-  if (![strongManager isPreiOS7Environment]) {
-    tableViewContentHeight += self.navigationController.navigationBar.frame.size.height;
-    tableViewContentHeight += [UIApplication sharedApplication].statusBarFrame.size.height;
-  }
+  tableViewContentHeight += self.navigationController.navigationBar.frame.size.height;
+  tableViewContentHeight += [UIApplication sharedApplication].statusBarFrame.size.height;
   
   NSUInteger footerViewSize = kMinPreviousVersionButtonHeight;
   NSUInteger frameHeight = (NSUInteger)self.view.frame.size.height;
@@ -242,11 +234,7 @@
     if ([appVersion.notes length] > 0) {
       cell.webViewContent = [NSString stringWithFormat:@"<p><b>%@</b>%@<br/><small>%@</small></p><p>%@</p>", [appVersion versionString], installed, dateAndSizeString, appVersion.notes];
     } else {
-      if ([strongManager isPreiOS7Environment]) {
-        cell.webViewContent = [NSString stringWithFormat:@"<div style=\"min-height:200px;vertical-align:middle;text-align:center;\">%@</div>", BITHockeyLocalizedString(@"UpdateNoReleaseNotesAvailable")];
-      } else {
-        cell.webViewContent = [NSString stringWithFormat:@"<div style=\"min-height:130px;vertical-align:middle;text-align:center;\">%@</div>", BITHockeyLocalizedString(@"UpdateNoReleaseNotesAvailable")];
-      }
+      cell.webViewContent = [NSString stringWithFormat:@"<div style=\"min-height:130px;vertical-align:middle;text-align:center;\">%@</div>", BITHockeyLocalizedString(@"UpdateNoReleaseNotesAvailable")];
     }
   } else {
     cell.webViewContent = [NSString stringWithFormat:@"<p><b>%@</b>%@<br/><small>%@</small></p><p>%@</p>", [appVersion versionString], installed, dateAndSizeString, [appVersion notesOrEmptyString]];
@@ -265,8 +253,8 @@
 - (instancetype)initWithStyle:(UITableViewStyle)style {
   if ((self = [super initWithStyle:UITableViewStylePlain])) {
     _updateManager = [BITHockeyManager sharedHockeyManager].updateManager ;
-    _isAppStoreEnvironment = [BITHockeyManager sharedHockeyManager].isAppStoreEnvironment;
-
+    _appEnvironment = [BITHockeyManager sharedHockeyManager].appEnvironment;
+    
     self.title = BITHockeyLocalizedString(@"UpdateScreenTitle");
     
     _cells = [[NSMutableArray alloc] initWithCapacity:5];
@@ -322,35 +310,16 @@
   [self.tableView addSubview:topView];
   
   _appStoreHeader = [[BITAppStoreHeader alloc] initWithFrame:CGRectMake(0, 0, self.view.frame.size.width, kAppStoreViewHeight)];
-  if ([strongManager isPreiOS7Environment]) {
-    _appStoreHeader.style = BITAppStoreHeaderStyleDefault;
-  } else {
-    _appStoreHeader.style = BITAppStoreHeaderStyleOS7;
-  }
   [self updateAppStoreHeader];
   
   NSString *iconFilename = bit_validAppIconFilename([NSBundle mainBundle], [NSBundle mainBundle]);
   if (iconFilename) {
-    BOOL addGloss = YES;
-    NSNumber *prerendered = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"UIPrerenderedIcon"];
-    if (prerendered) {
-      addGloss = ![prerendered boolValue];
-    }
-    
-    if (addGloss && [strongManager isPreiOS7Environment]) {
-      _appStoreHeader.iconImage = [self addGlossToImage:[UIImage imageNamed:iconFilename]];
-    } else {
-      _appStoreHeader.iconImage = [UIImage imageNamed:iconFilename];
-    }
+    _appStoreHeader.iconImage = [UIImage imageNamed:iconFilename];
   }
   
   self.tableView.tableHeaderView = _appStoreHeader;
   
-  BITStoreButtonStyle buttonStyle = BITStoreButtonStyleDefault;
-  if (![strongManager isPreiOS7Environment]) {
-    buttonStyle = BITStoreButtonStyleOS7;
-  }
-  BITStoreButton *storeButton = [[BITStoreButton alloc] initWithPadding:CGPointMake(5, 58) style:buttonStyle];
+  BITStoreButton *storeButton = [[BITStoreButton alloc] initWithPadding:CGPointMake(5, 58) style:BITStoreButtonStyleOS7];
   storeButton.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin;
   storeButton.buttonDelegate = self;
   [self.tableView.tableHeaderView addSubview:storeButton];
@@ -361,8 +330,7 @@
 }
 
 - (void)viewWillAppear:(BOOL)animated {
-  typeof(self.updateManager) strongManager = self.updateManager;
-  if (_isAppStoreEnvironment) {
+  if (_appEnvironment != BITEnvironmentOther) {
     self.appStoreButtonState = AppStoreButtonStateOffline;
   } else if (self.mandatoryUpdate) {
     self.navigationItem.leftBarButtonItem = nil;
@@ -406,9 +374,8 @@
         }
       }
     }
-    
-    BITWebTableViewCell *cell = [[BITWebTableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:kWebCellIdentifier];
-    [self configureWebCell:cell forAppVersion:appVersion];
+
+    BITWebTableViewCell *cell = [self webCellWithAppVersion:appVersion];
     [_cells addObject:cell];
     
     if (breakAfterThisAppVersion) break;
@@ -416,6 +383,12 @@
   
   [self.tableView reloadData];
   [self showHidePreviousVersionsButton];
+}
+
+- (BITWebTableViewCell *)webCellWithAppVersion:(BITAppVersionMetaInfo *)appVersion {
+  BITWebTableViewCell *cell = [[BITWebTableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:kWebCellIdentifier];
+  [self configureWebCell:cell forAppVersion:appVersion];
+  return cell;
 }
 
 - (void)showPreviousVersionAction {
@@ -434,10 +407,8 @@
         continue; // skip already shown
       }
     }
-    
-    BITWebTableViewCell *cell = [[BITWebTableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:kWebCellIdentifier];
-    [self configureWebCell:cell forAppVersion:appVersion];
-    [_cells addObject:cell];
+
+    [_cells addObject:[self webCellWithAppVersion:appVersion]];
   }
   [self.tableView reloadData];
   [self showHidePreviousVersionsButton];
@@ -507,9 +478,10 @@
   if ([_cells count] > (NSUInteger)indexPath.row) {
     return [_cells objectAtIndex:indexPath.row];
   } else {
-    BITHockeyLog(@"Warning: cells_ and indexPath do not match? forgot calling redrawTableView?");
+    BITHockeyLogWarning(@"Warning: cells_ and indexPath do not match? forgot calling redrawTableView? Returning empty UITableViewCell");
+    return [UITableViewCell new];
+
   }
-  return nil;
 }
 
 

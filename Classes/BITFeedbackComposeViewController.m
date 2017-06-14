@@ -66,7 +66,7 @@
 @property (nonatomic) NSInteger selectedAttachmentIndex;
 @property (nonatomic, strong) UITapGestureRecognizer *tapRecognizer;
 
-/** 
+/**
  * Workaround for UIImagePickerController bug.
  * The statusBar shows up when the UIImagePickerController opens.
  * The status bar does not disappear again when the UIImagePickerController is dismissed.
@@ -98,7 +98,7 @@
     _attachmentScrollViewImageViews = [NSMutableArray new];
     _tapRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(scrollViewTapped:)];
     [_attachmentScrollView addGestureRecognizer:self.tapRecognizer];
-
+    
     _text = nil;
   }
   
@@ -128,10 +128,10 @@
       BITHockeyAttachment *sourceAttachment = (BITHockeyAttachment *)item;
       
       if (!sourceAttachment.hockeyAttachmentData) {
-        BITHockeyLog(@"BITHockeyAttachment instance doesn't contain any data.");
+        BITHockeyLogDebug(@"BITHockeyAttachment instance doesn't contain any data.");
         continue;
       }
-            
+      
       NSString *filename = [NSString stringWithFormat:@"Attachment_%li.data", (unsigned long)[self.attachments count]];
       if (sourceAttachment.filename) {
         filename = sourceAttachment.filename;
@@ -141,7 +141,7 @@
       attachment.originalFilename = filename;
       [self.attachments addObject:attachment];
     } else {
-      BITHockeyLog(@"Unknown item type %@", item);
+      BITHockeyLogWarning(@"WARNING: Unknown item type %@", item);
     }
   }
 }
@@ -154,7 +154,7 @@
   CGSize kbSize = [[info objectForKey:UIKeyboardFrameBeginUserInfoKey] CGRectValue].size;
   
   BOOL isPortraitOrientation = NO;
-
+  
 #if __IPHONE_OS_VERSION_MIN_REQUIRED >= __IPHONE_8_0
   isPortraitOrientation = UIInterfaceOrientationIsPortrait([[UIApplication sharedApplication] statusBarOrientation]);
 #else
@@ -193,7 +193,7 @@
   [self.contentViewContainer setFrame:frame];
   
   [self performSelector:@selector(refreshAttachmentScrollview) withObject:nil afterDelay:0.0f];
-
+  
 }
 
 - (void)keyboardWillBeHidden:(NSNotification*)aNotification {
@@ -212,17 +212,17 @@
   
   // Do any additional setup after loading the view.
   self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemCancel
-                                                                                         target:self
-                                                                                         action:@selector(dismissAction:)];
+                                                                                        target:self
+                                                                                        action:@selector(dismissAction:)];
   self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:BITHockeyLocalizedString(@"HockeyFeedbackComposeSend")
-                                                                             style:UIBarButtonItemStyleDone
-                                                                            target:self
-                                                                            action:@selector(sendAction:)];
+                                                                            style:UIBarButtonItemStyleDone
+                                                                           target:self
+                                                                           action:@selector(sendAction:)];
   
   // Container that contains both the textfield and eventually the photo scroll view on the right side
   self.contentViewContainer = [[UIView alloc] initWithFrame:self.view.bounds];
   self.contentViewContainer.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleHeight;
-
+  
   [self.view addSubview:self.contentViewContainer];
   
   // message input textfield
@@ -232,27 +232,32 @@
   self.textView.backgroundColor = [UIColor whiteColor];
   self.textView.returnKeyType = UIReturnKeyDefault;
   self.textView.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleHeight;
+  self.textView.accessibilityHint = BITHockeyLocalizedString(@"HockeyAccessibilityHintRequired");
   
   [self.contentViewContainer addSubview:self.textView];
   
   // Add Photo Button + Container that's displayed above the keyboard.
-  self.textAccessoryView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, CGRectGetWidth(self.view.frame), 44)];
-  self.textAccessoryView.backgroundColor = [UIColor colorWithRed:0.9f green:0.9f blue:0.9f alpha:1.0f];
-  self.addPhotoButton = [UIButton buttonWithType:UIButtonTypeCustom];
-  [self.addPhotoButton setTitle:BITHockeyLocalizedString(@"HockeyFeedbackComposeAttachmentAddImage") forState:UIControlStateNormal];
-  [self.addPhotoButton setTitleColor:[UIColor darkGrayColor] forState:UIControlStateNormal];
-  [self.addPhotoButton setTitleColor:[UIColor lightGrayColor] forState:UIControlStateDisabled];
-  self.addPhotoButton.frame = CGRectMake(0, 0, CGRectGetWidth(self.view.frame), 44);
-  [self.addPhotoButton addTarget:self action:@selector(addPhotoAction:) forControlEvents:UIControlEventTouchUpInside];
-  self.addPhotoButton.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin|UIViewAutoresizingFlexibleRightMargin;
-
-  [self.textAccessoryView addSubview:self.addPhotoButton];
+  if([BITHockeyHelper isPhotoAccessPossible]) {
+    self.textAccessoryView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, CGRectGetWidth(self.view.frame), 44)];
+    self.textAccessoryView.backgroundColor = [UIColor colorWithRed:0.9f green:0.9f blue:0.9f alpha:1.0f];
+  
+    self.addPhotoButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    [self.addPhotoButton setTitle:BITHockeyLocalizedString(@"HockeyFeedbackComposeAttachmentAddImage") forState:UIControlStateNormal];
+    [self.addPhotoButton setTitleColor:[UIColor darkGrayColor] forState:UIControlStateNormal];
+    [self.addPhotoButton setTitleColor:[UIColor lightGrayColor] forState:UIControlStateDisabled];
+    self.addPhotoButton.frame = CGRectMake(0, 0, CGRectGetWidth(self.view.frame), 44);
+    [self.addPhotoButton addTarget:self action:@selector(addPhotoAction:) forControlEvents:UIControlEventTouchUpInside];
+    self.addPhotoButton.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin|UIViewAutoresizingFlexibleRightMargin;
+    [self.textAccessoryView addSubview:self.addPhotoButton];
+  }
+  
+  
   
   if (!self.hideImageAttachmentButton) {
     self.textView.inputAccessoryView = self.textAccessoryView;
   }
   
-  // This could be a subclass, yet 
+  // This could be a subclass, yet
   self.attachmentScrollView = [[UIScrollView alloc] initWithFrame:CGRectZero];
   self.attachmentScrollView.scrollEnabled = YES;
   self.attachmentScrollView.bounces = YES;
@@ -271,15 +276,15 @@
   [[NSNotificationCenter defaultCenter] addObserver:self
                                            selector:@selector(keyboardWillBeHidden:)
                                                name:UIKeyboardWillHideNotification object:nil];
-
-  strongManager.currentFeedbackComposeViewController = self;
+  
+  self.manager.currentFeedbackComposeViewController = self;
   
   [super viewWillAppear:animated];
   
   if (_text && self.textView.text.length == 0) {
     self.textView.text = _text;
   }
-
+  
   if (self.isStatusBarHiddenBeforeShowingPhotoPicker) {
     // requires iOS 7
     if ([self respondsToSelector:@selector(prefersStatusBarHidden)]) {
@@ -293,7 +298,7 @@
   }
   
   self.isStatusBarHiddenBeforeShowingPhotoPicker = nil;
-
+  
   [self updateBarButtonState];
 }
 
@@ -306,8 +311,7 @@
 }
 
 - (void)viewDidAppear:(BOOL)animated {
-  typeof(self.manager) strongManager = self.manager;
-	[super viewDidAppear:animated];
+  [super viewDidAppear:animated];
   
   if ([strongManager askManualUserDataAvailable] &&
       ([strongManager requireManualUserDataMissing] ||
@@ -329,16 +333,16 @@
   
   strongManager.currentFeedbackComposeViewController = nil;
   
-	[super viewWillDisappear:animated];
+  [super viewWillDisappear:animated];
 }
 
 - (void)viewDidDisappear:(BOOL)animated {
-	[super viewDidDisappear:animated];
+  [super viewDidDisappear:animated];
 }
 
 - (void)refreshAttachmentScrollview {
   CGFloat scrollViewWidth = 0;
-    
+  
   if (self.imageAttachments.count){
     scrollViewWidth = 100;
   }
@@ -377,7 +381,7 @@
       [self.attachmentScrollView addSubview:newImageButton];
     }
   }
-    
+  
   int index = 0;
   
   CGFloat currentYOffset = 0.0f;
@@ -414,10 +418,12 @@
     self.navigationItem.rightBarButtonItem.enabled = NO;
   }
   
-  if (self.imageAttachments.count > 2){
-    [self.addPhotoButton setEnabled:NO];
-  } else {
-    [self.addPhotoButton setEnabled:YES];
+  if(self.addPhotoButton) {
+    if (self.imageAttachments.count > 2){
+      [self.addPhotoButton setEnabled:NO];
+    } else {
+      [self.addPhotoButton setEnabled:YES];
+    }
   }
 }
 
@@ -483,11 +489,6 @@
 - (void)dismissWithResult:(BITFeedbackComposeResult) result {
   if([self.delegate respondsToSelector:@selector(feedbackComposeViewController:didFinishWithResult:)]) {
     [self.delegate feedbackComposeViewController:self didFinishWithResult:result];
-  } else if ([self.delegate respondsToSelector:@selector(feedbackComposeViewControllerDidFinish:)]) {
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated"
-    [self.delegate feedbackComposeViewControllerDidFinish:self];
-#pragma clang diagnostic pop
   } else {
     [self dismissViewControllerAnimated:YES completion:nil];
   }
@@ -495,14 +496,15 @@
 
 - (void)addPhotoAction:(id)sender {
   if (_actionSheetVisible) return;
-
+  
   self.isStatusBarHiddenBeforeShowingPhotoPicker = @([[UIApplication sharedApplication] isStatusBarHidden]);
-
+  
   // add photo.
   UIImagePickerController *pickerController = [[UIImagePickerController alloc] init];
   pickerController.sourceType = UIImagePickerControllerSourceTypePhotoLibrary;
   pickerController.delegate = self;
   pickerController.editing = NO;
+  pickerController.navigationBar.barStyle = self.manager.barStyle;
   [self presentViewController:pickerController animated:YES completion:nil];
 }
 
@@ -543,46 +545,50 @@
   NSInteger index = [self.attachmentScrollViewImageViews indexOfObject:sender];
   
   self.selectedAttachmentIndex = (self.attachmentScrollViewImageViews.count - index - 1);
-  
-  // requires iOS 8
-  id uialertcontrollerClass = NSClassFromString(@"UIAlertController");
-  if (uialertcontrollerClass) {
-    __weak typeof(self) weakSelf = self;
-
-    UIAlertController *alertController = [UIAlertController alertControllerWithTitle:nil
-                                                                             message:nil
-                                                                      preferredStyle:UIAlertControllerStyleActionSheet];
-    
-    
-    UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:BITHockeyLocalizedString(@"HockeyFeedbackComposeAttachmentCancel")
-                                                           style:UIAlertActionStyleCancel
-                                                         handler:^(UIAlertAction * action) {
-                                                           typeof(self) strongSelf = weakSelf;
-                                                           [strongSelf cancelAction];
-                                                         }];
-    
-    [alertController addAction:cancelAction];
-    
-    UIAlertAction *editAction = [UIAlertAction actionWithTitle:BITHockeyLocalizedString(@"HockeyFeedbackComposeAttachmentEdit")
-                                                         style:UIAlertActionStyleDefault
-                                                       handler:^(UIAlertAction * action) {
-                                                         typeof(self) strongSelf = weakSelf;
-                                                         [strongSelf editAction];
-                                                       }];
-    
-    [alertController addAction:editAction];
-    
-    UIAlertAction *deleteAction = [UIAlertAction actionWithTitle:BITHockeyLocalizedString(@"HockeyFeedbackComposeAttachmentDelete")
-                                                         style:UIAlertActionStyleDestructive
-                                                       handler:^(UIAlertAction * action) {
-                                                         typeof(self) strongSelf = weakSelf;
-                                                         [strongSelf deleteAction];
-                                                       }];
-    
-    [alertController addAction:deleteAction];
-    
-    [self presentViewController:alertController animated:YES completion:nil];
-  } else {
+  /* We won't use this for now until we have a more robust solution for displaying UIAlertController
+   // requires iOS 8
+   id uialertcontrollerClass = NSClassFromString(@"UIAlertController");
+   if (uialertcontrollerClass) {
+   __weak typeof(self) weakSelf = self;
+   
+   UIAlertController *alertController = [UIAlertController alertControllerWithTitle:nil
+   message:nil
+   preferredStyle:UIAlertControllerStyleActionSheet];
+   
+   
+   UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:BITHockeyLocalizedString(@"HockeyFeedbackComposeAttachmentCancel")
+   style:UIAlertActionStyleCancel
+   handler:^(UIAlertAction * action) {
+   typeof(self) strongSelf = weakSelf;
+   [strongSelf cancelAction];
+   _actionSheetVisible = NO;
+   }];
+   
+   [alertController addAction:cancelAction];
+   
+   UIAlertAction *editAction = [UIAlertAction actionWithTitle:BITHockeyLocalizedString(@"HockeyFeedbackComposeAttachmentEdit")
+   style:UIAlertActionStyleDefault
+   handler:^(UIAlertAction * action) {
+   typeof(self) strongSelf = weakSelf;
+   [strongSelf editAction];
+   _actionSheetVisible = NO;
+   }];
+   
+   [alertController addAction:editAction];
+   
+   UIAlertAction *deleteAction = [UIAlertAction actionWithTitle:BITHockeyLocalizedString(@"HockeyFeedbackComposeAttachmentDelete")
+   style:UIAlertActionStyleDestructive
+   handler:^(UIAlertAction * action) {
+   typeof(self) strongSelf = weakSelf;
+   [strongSelf deleteAction];
+   _actionSheetVisible = NO;
+   }];
+   
+   [alertController addAction:deleteAction];
+   
+   [self presentViewController:alertController animated:YES completion:nil];
+   } else {
+   */
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
   UIActionSheet *actionSheet = [[UIActionSheet alloc] initWithTitle: nil
@@ -593,10 +599,10 @@
   
   [actionSheet showFromRect: sender.frame inView: self.attachmentScrollView animated: YES];
 #pragma clang diagnostic push
-  }
+  /*}*/
   
   _actionSheetVisible = YES;
-  if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
+  if ((UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) || ([[NSProcessInfo processInfo] respondsToSelector:@selector(isOperatingSystemAtLeastVersion:)] && [[NSProcessInfo processInfo] isOperatingSystemAtLeastVersion:(NSOperatingSystemVersion){9,0,0}])) {
     [self.textView resignFirstResponder];
   }
 }
@@ -654,7 +660,7 @@
   
   [self refreshAttachmentScrollview];
   
-  if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
+  if ((UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) || ([[NSProcessInfo processInfo] respondsToSelector:@selector(isOperatingSystemAtLeastVersion:)] && [[NSProcessInfo processInfo] isOperatingSystemAtLeastVersion:(NSOperatingSystemVersion){9,0,0}])) {
     [self.textView becomeFirstResponder];
   }
 }
@@ -664,14 +670,14 @@
     BITFeedbackMessageAttachment *attachment = self.imageAttachments[self.selectedAttachmentIndex];
     BITImageAnnotationViewController *annotationEditor = [[BITImageAnnotationViewController alloc ] init];
     annotationEditor.delegate = self;
-    UINavigationController *navController = [[UINavigationController alloc] initWithRootViewController:annotationEditor];
+    UINavigationController *navController = [self.manager customNavigationControllerWithRootViewController:annotationEditor presentationStyle:UIModalPresentationFullScreen];
     annotationEditor.image = attachment.imageRepresentation;
     [self presentViewController:navController animated:YES completion:nil];
   }
 }
 
 - (void)cancelAction {
-  if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
+  if ((UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) || ([[NSProcessInfo processInfo] respondsToSelector:@selector(isOperatingSystemAtLeastVersion:)] && [[NSProcessInfo processInfo] isOperatingSystemAtLeastVersion:(NSOperatingSystemVersion){9,0,0}])) {
     [self.textView becomeFirstResponder];
   }
 }

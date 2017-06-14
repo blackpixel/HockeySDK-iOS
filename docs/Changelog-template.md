@@ -1,3 +1,186 @@
+## 4.1.5
+
+This release officially dropps the support for iOS 6.
+
+- [FIX] Remove the dependency for AssetLibrary for the default subspec in our podspec [#403](https://github.com/bitstadium/HockeySDK-iOS/pull/403). Thanks to [@tschob](https://github.com/tschob) for the pointer.
+- [FIX] A couple of visual bugs have been fixed [#404](https://github.com/bitstadium/HockeySDK-iOS/pull/404) thanks to [@dweston](https://github.com/dtweston).
+- [IMPROVEMENT] We have improved accessibility of our feedback UI [#409](https://github.com/bitstadium/HockeySDK-iOS/pull/409) with help by [@erychagov](https://github.com/erychagov).
+
+## 4.1.4
+
+- [IMPROVEMENT] Test targets won't be build in the run phase of the framework, which makes it possible to build individual configurations when using Carthage. Thanks a lot @wiedem for your contribution! [394](https://github.com/bitstadium/HockeySDK-iOS/pull/394)
+- [IMPROVEMENT] We've reverted to a build based on PLCrashReporter 1.2.1 as 1.3 comes with unintended namespace collisions in some edge cases that result in worse crash reporting than you were used to.
+- [BUGFIX] Fixes a crash on iOS 9 when attaching data to feedback [#395](https://github.com/bitstadium/HockeySDK-iOS/issues/395)
+- [BUGFIX] Disabling the `BITFeedbackManager` now disables the various `BITFeedbackObservationModes`. [#390](https://github.com/bitstadium/HockeySDK-iOS/pull/390)
+
+## 4.1.3
+
+- [NEW] Added `forceNewFeedbackThreadForFeedbackManager:`-callback to `BITFeedbackManagerDelegate` to force a new feedback thread for each new feedback.
+- [NEW] Norwegian (Bokmal) localization
+- [NEW] Persian (Farsi) localization
+- [BUGFIX] Fix analyzer warning in `BITChannelManagerTests`
+- [BUGFIX] Add check for nil in `BITChannel`.
+
+## 4.1.2
+
+- [NEW] New `shouldDisplayUpdateAlertForUpdateManager`-API [#339](https://github.com/bitstadium/HockeySDK-iOS/pull/339) to make the moment of appearance for custom update UI even more customizable. 
+- [IMPROVEMENT] Fix static analyzer warnings. [#351](https://github.com/bitstadium/HockeySDK-iOS/pull/351)
+- [IMPROVEMENT] Internal structure of embedded frameworks changed [#352](https://github.com/bitstadium/HockeySDK-iOS/pull/352)
+- [IMPROVEMENT] Upgrade to PLCrashReporter 1.3
+- [BUGFIX] Enable bitcode in all configurations [#344](https://github.com/bitstadium/HockeySDK-iOS/pull/344)
+- [BUGFIX] Fixed anonymisation of binary paths when running in the simulator [#347](https://github.com/bitstadium/HockeySDK-iOS/pull/347)
+- - [BUGFIX] Rename configurations to not break Carthage integration [#353](https://github.com/bitstadium/HockeySDK-iOS/pull/353)
+
+## 4.1.1
+
+**Attention** Due to changes in iOS 10, it is now necessary to include the `NSPhotoLibraryUsageDescription` in your app's Info.plist file if you want to use HockeySDK's Feedback feature. Since using the feature without the plist key present could lead to an App Store rejection, our default CocoaPods configuration does not include the Feedback feature anymore.
+If you want to continue to use it, use this in your `Podfile`:
+
+```ruby
+pod "HockeySDK", :subspecs => ['AllFeaturesLib']
+```
+
+Additionally, we now also provide a new flavor in our binary distribution. To use all features, including Feedback, use `HockeySDK.embeddedframework` from the `HockeySDKAllFeatures` folder.
+
+- [NEW] The property `userDescription` on `BITCrashMetaData` had to be renamed to `userProvidedeDescription` to provide a name clash with Apple Private API
+- [IMPROVEMENT] Warn if the Feedback feature is being used without `NSPhotoLibraryUsageDescription` being present
+- [IMPROVEMENT] Updated Chinese translations
+- [IMPROVEMENT] Set web view baseURL to `about:blank` to improve security
+- [BUGFIX] Fix an issue in the telemetry channel that could be triggered in multi-threaded environments
+- [BUGFIX] Fix several small layout issues by updating to a newer version of TTTAttributedLabel
+- [BUGFIX] Fix app icons with unusual filenames not showing in the in-app update prompt
+
+## 4.1.0
+
+- Includes improvements from 4.0.2 release of the SDK.
+- [NEW] Additional API to track an event with properties and measurements.
+
+## 4.1.0-beta.2
+
+- [BUGFIX] Fixes an issue where the whole app's Application Support directory was accidentally excluded from backups.
+This SDK release explicitly includes the Application Support directory into backups. If you want to opt-out of this fix and keep the Application Directory's backup flag untouched, add the following line above the SDK setup code:
+
+  - Objective-C:
+        ```objectivec
+        [[NSUserDefaults standardUserDefaults] setBool:YES forKey:@"BITExcludeApplicationSupportFromBackup"];
+        ```
+
+  - Swift:
+        ```swift
+        NSUserDefaults.standardUserDefaults().setBool(true, forKey: "BITExcludeApplicationSupportFromBackup")
+        ```
+
+- [NEW] Add more fine-grained log levels
+- [NEW] Add ability to connect existing logging framework
+- [BUGFIX] Make CrashManager property `serverURL` individual setable
+- [BUGFIX] Properly dispatch `dismissViewController` call to main queue
+- [BUGFIX] Fixes an issue that prevented preparedItemsForFeedbackManager: delegate method from working
+
+## Version 4.1.0-beta.1
+
+- [IMPROVEMENT] Prevent User Metrics from being sent if `BITMetricsManager` has been disabled.
+
+## Version 4.1.0-alpha.2
+
+- [BUGFIX] Fix different bugs in the events sending pipeline
+
+## Version 4.1.0-alpha.1
+
+- [NEW] Add ability to track custom events
+- [IMPROVEMENT] Events are always persisted, even if the app crashes
+- [IMPROVEMENT] Allow disabling `BITMetricsManager` at any time
+- [BUGFIX] Server URL is now properly customizable
+- [BUGFIX] Fix memory leak in networking code
+- [IMPROVEMENT] Optimize tests and always build test target
+- [IMPROVEMENT] Reuse `NSURLSession` object
+- [IMPROVEMENT] Under the hood improvements and cleanup
+
+## Version 4.0.2
+
+- [BUGFIX] Add Bitcode marker back to simulator slices. This is necessary because otherwise `lipo` apparently strips the Bitcode sections from the merged library completely. As a side effect, this unfortunately breaks compatibility with Xcode 6. [#310](https://github.com/bitstadium/HockeySDK-iOS/pull/310)
+- [IMPROVEMENT] Improve error detection and logging during crash processing in case the app is sent to the background while crash processing hasn't finished.[#311](https://github.com/bitstadium/HockeySDK-iOS/pull/311)
+
+## Version 4.0.1
+
+- [BUGFIX] Fixes an issue where the whole app's Application Support directory was accidentally excluded from backups.
+This SDK release explicitly includes the Application Support directory into backups. If you want to opt-out of this fix and keep the Application Directory's backup flag untouched, add the following line above the SDK setup code:
+
+  - Objective-C:
+        ```objectivec
+        [[NSUserDefaults standardUserDefaults] setBool:YES forKey:@"kBITExcludeApplicationSupportFromBackup"];
+        ```
+
+  - Swift:
+        ```swift
+        NSUserDefaults.standardUserDefaults().setBool(true, forKey: "kBITExcludeApplicationSupportFromBackup")
+        ```
+
+- [BUGFIX] Fixes an issue that prevented preparedItemsForFeedbackManager: delegate method from working
+
+## Version 4.0.0
+
+- [NEW] Added official Carthage support
+- [NEW] Added `preparedItemsForFeedbackManager:` method in `BITFeedbackManagerDelegate` to allow to provide items with every possible method of showing the feedback compose dialog.
+- [UPDATE] Our CrashOnly binary now includes User Metrics which enables crash free users statistics
+- [UPDATE] Deprecate `feedbackComposerPreparedItems` property in favor of the new delegate method.
+- [IMPROVEMENT] Prefix GZIP category on NSData to prevent symbol collisions
+- [BUGFIX] Add minor UI bug when adding arrow annotation to feedback image
+
+## Version 4.0.0-beta.1
+
+- [NEW] User Metrics including users and sessions data is now in public beta
+
+## Version 4.0.0-alpha.2
+
+- [UPDATE] Include changes from HockeySDK 3.8.6
+
+## Version 4.0.0-alpha.1
+
+- [NEW] Added `BITMetricsManager` to track users and sessions
+- [UPDATE] Remove previously deprecated UpdateManagerDelegate method `-viewControllerForUpdateManager:`
+- [UPDATE] Remove previously deprecated CrashManagerDelegate methods `-userNameForCrashManager:` and `-userEmailForCrashManager:`
+- [UPDATE] Remove previously deprecated property `appStoreEnvironment`
+- [UPDATE] Remove previously deprecated misspelled `timeintervalCrashInLastSessionOccured` property
+- [UPDATE] Remove previously deprecated misspelled `BITFeedbackListViewCellPresentatationStyle` enum
+
+## Version 3.8.6
+
+- [UPDATE] Some minor refactorings
+- [BUGFIX] Fix crash in `BITCrashReportTextFormatter` in cases where processPath is unexpectedly nil
+- [BUGFIX] Fix bug where feedback image could only be added once
+- [BUGFIX] Fix URL encoding bug in BITUpdateManager
+- [BUGFIX] Include username, email, etc. in `appNotTerminatingCleanly` reports
+- [BUGFIX] Fix NSURLSession memory leak in Swift apps
+- [BUGFIX] Fix issue preventing attachment from being included when sending non-clean termination report
+- [IMPROVEMENT] Anonymize binary path in crash report
+- [IMPROVEMENT] Support escaping of additional characters (URL encoding)
+- [IMPROVEMENT] Support Bundle Identifiers which contain whitespaces
+
+## Version 3.8.5
+
+- [UPDATE] Some minor improvements to our documentation
+- [BUGFIX] Fix a crash where `appStoreReceiptURL` was accidentally accessed on iOS 6
+- [BUGFIX] Fix a warning when implementing `BITHockeyManagerDelegate`
+
+## Version 3.8.4
+
+- [BUGFIX] Fix a missing header in the `HockeySDK.h` umbrella
+- [BUGFIX] Fix several type comparison warnings
+
+## Version 3.8.3
+
+- [NEW] Adds new `appEnvironment` property to indicate the environment the app is running in. This replaces the old `isAppStoreEnvironment` which is now deprecated. We can now differentiate between apps installed via TestFlight or the AppStore
+- [NEW] Distributed zip file now also contains our documentation
+- [UPDATE] Prevent issues with duplicate symbols from PLCrashReporter
+- [UPDATE] Remove several typos in our documentation and improve instructions for use in extensions
+- [UPDATE] Add additional nil-checks before calling blocks
+- [UPDATE] Minor code readability improvements
+- [BUGFIX] `BITFeedbackManager`: Fix Feedback Annotations not working on iPhones running iOS 9
+- [BUGFIX] Switch back to using UIAlertView to prevent several issues. We will add a more robust solution which uses UIAlertController in a future update.
+- [BUGFIX] Fix several small issues in our CrashOnly builds
+- [BUGFIX] Minor fixes for memory leaks
+- [BUGFIX] Fix crashes because completion blocks were not properly dispatched on the main thread
+
 ## Version 3.8.2
 
 - [UPDATE] Added support for Xcode 6.x 

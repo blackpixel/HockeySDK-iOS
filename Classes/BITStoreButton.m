@@ -97,13 +97,9 @@
   
   // show white or gray text, depending on the state
   if (self.buttonData.isEnabled) {
-    if (self.style == BITStoreButtonStyleDefault) {
-      [self setTitleColor:BIT_RGBCOLOR(106, 106, 106) forState:UIControlStateNormal];
-    } else {
-      [self setTitleColor:BIT_RGBCOLOR(35, 111, 251) forState:UIControlStateNormal];
-      [_defaultBorderLayer setHidden:NO];
-      [_inActiveBorderLayer setHidden:YES];
-    }
+    [self setTitleColor:BIT_RGBCOLOR(35, 111, 251) forState:UIControlStateNormal];
+    [_defaultBorderLayer setHidden:NO];
+    [_inActiveBorderLayer setHidden:YES];
   } else {
     [self setTitleColor:BIT_RGBCOLOR(148, 150, 151) forState:UIControlStateNormal];
     if (self.style == BITStoreButtonStyleOS7) {
@@ -177,24 +173,9 @@
     _customPadding = padding;
     _style = style;
 
-    if (style == BITStoreButtonStyleDefault) {
-      // main gradient layer
-      CAGradientLayer *gradient = [CAGradientLayer layer];
-      gradient.colors = @[(id)BIT_RGBCOLOR(243, 243, 243).CGColor, (id)BIT_RGBCOLOR(222, 222, 222).CGColor];
-      gradient.locations = @[[NSNumber numberWithFloat:0.0], [NSNumber numberWithFloat:1.0]];
-      gradient.frame = CGRectMake(0.0, 0.0, CGRectGetWidth(frame), CGRectGetHeight(frame));
-      gradient.cornerRadius = 2.5;
-      gradient.needsDisplayOnBoundsChange = YES;
-      [self.layer addSublayer:gradient];
-    }
-    
     // border layers for more sex!
     _defaultBorderLayer = [CALayer layer];
-    if (style == BITStoreButtonStyleDefault) {
-      _defaultBorderLayer.borderColor = [BIT_RGBCOLOR(191, 191, 191) CGColor];
-    } else {
       _defaultBorderLayer.borderColor = [BIT_RGBCOLOR(35, 111, 251) CGColor];
-    }
     _defaultBorderLayer.borderWidth = 1.0;
 		_defaultBorderLayer.frame = CGRectMake(0.0, 0.0, CGRectGetWidth(frame), CGRectGetHeight(frame));
 		_defaultBorderLayer.cornerRadius = 2.5;
@@ -277,4 +258,4 @@
 
 @end
 
-#endif
+#endif /* HOCKEYSDK_FEATURE_UPDATES */

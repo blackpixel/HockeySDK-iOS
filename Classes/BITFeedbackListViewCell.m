@@ -89,7 +89,6 @@
   if (self) {
     // Initialization code
     _backgroundStyle = BITFeedbackListViewCellBackgroundStyleNormal;
-    _style = BITFeedbackListViewCellPresentationStyleDefault;
     
     _message = nil;
     
@@ -108,11 +107,11 @@
     _labelTitle = [[UILabel alloc] init];
     _labelTitle.font = [UIFont systemFontOfSize:TITLE_FONTSIZE];
     
-    _labelText = [[BITAttributedLabel alloc] init];
+    _labelText = [[BITAttributedLabel alloc] initWithFrame:CGRectZero];
     _labelText.font = [UIFont systemFontOfSize:TEXT_FONTSIZE];
     _labelText.numberOfLines = 0;
     _labelText.textAlignment = NSTextAlignmentLeft;
-    _labelText.dataDetectorTypes = UIDataDetectorTypeAll;
+    _labelText.enabledTextCheckingTypes = UIDataDetectorTypeAll;
     
     _attachmentViews = [NSMutableArray new];
     [self registerObservers];
@@ -165,17 +164,9 @@
 - (UIColor *)backgroundColor {
   
   if (self.backgroundStyle == BITFeedbackListViewCellBackgroundStyleNormal) {
-    if (self.style == BITFeedbackListViewCellPresentationStyleDefault) {
-      return BACKGROUNDCOLOR_DEFAULT;
-    } else {
-      return BACKGROUNDCOLOR_DEFAULT_OS7;
-    }
+    return BACKGROUNDCOLOR_DEFAULT_OS7;
   } else {
-    if (self.style == BITFeedbackListViewCellPresentationStyleDefault) {
-      return BACKGROUNDCOLOR_ALTERNATE;
-    } else {
-      return BACKGROUNDCOLOR_ALTERNATE_OS7;
-    }
+    return BACKGROUNDCOLOR_ALTERNATE_OS7;
   }
 }
 
@@ -275,9 +266,7 @@
     self.accessoryBackgroundView.backgroundColor = [self backgroundColor];
   }
   
-  if (self.style == BITFeedbackListViewCellPresentationStyleDefault) {
-    [self addSubview:self.accessoryBackgroundView];
-  } else if (self.accessoryBackgroundView.superview){
+  if (self.accessoryBackgroundView.superview){
     [self.accessoryBackgroundView removeFromSuperview];
   }
   self.contentView.backgroundColor = [self backgroundColor];
@@ -359,18 +348,21 @@
 }
 
 - (void)imageButtonPressed:(id)sender {
-  typeof(self.delegate) strongDelegate = self.delegate;
-  typeof(self) strongSelf = self;
-  if ([strongDelegate respondsToSelector:@selector(listCell:didSelectAttachment:)]) {
-    NSInteger index = [self.attachmentViews indexOfObject:sender];
-    if (index != NSNotFound && [strongSelf.message previewableAttachments].count > index) {
-      BITFeedbackMessageAttachment *attachment = [strongSelf.message previewableAttachments][index];
-      [strongDelegate listCell:strongSelf didSelectAttachment:attachment];
+  if ([self.delegate respondsToSelector:@selector(listCell:didSelectAttachment:)]) {
+    NSUInteger index = [self.attachmentViews indexOfObject:sender];
+    if (index != NSNotFound && [self.message previewableAttachments].count > index) {
+      BITFeedbackMessageAttachment *attachment = [self.message previewableAttachments][index];
+      [self.delegate listCell:self didSelectAttachment:attachment];
     }
   }
 }
 
+- (NSString *)accessibilityLabel {
+  NSString *messageTime = [self.labelTitle accessibilityLabel];
+  NSString *messageText = [self.labelText accessibilityLabel];
+  return [NSString stringWithFormat:@"%@, %@", messageTime, messageText];
+}
 
 @end
 
-#endif
+#endif /* HOCKEYSDK_FEATURE_FEEDBACK */

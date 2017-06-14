@@ -1,6 +1,6 @@
 //
-//  BITHockeyAppClientTests
-//  HockeySDKTests
+//  BITHockeyAppClientTests.m
+//  HockeySDK
 //
 //  Created by Stephan Diederich on 06.09.13.
 //
@@ -8,10 +8,7 @@
 
 #import <XCTest/XCTest.h>
 
-#define HC_SHORTHAND
 #import <OCHamcrestIOS/OCHamcrestIOS.h>
-
-#define MOCKITO_SHORTHAND
 #import <OCMockitoIOS/OCMockitoIOS.h>
 
 #import "HockeySDK.h"

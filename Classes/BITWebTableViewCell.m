@@ -88,7 +88,7 @@ body { font: 13px 'Helvetica Neue', Helvetica; color:#626262; word-wrap:break-wo
     
     //HockeySDKLog(@"%@\n%@\%@", PSWebTableViewCellHtmlTemplate, deviceWidth, self.webViewContent);
     NSString *contentHtml = [NSString stringWithFormat:BITWebTableViewCellHtmlTemplate, deviceWidth, self.webViewContent];
-    [_webView loadHTMLString:contentHtml baseURL:nil];
+    [_webView loadHTMLString:contentHtml baseURL:[NSURL URLWithString:@"about:blank"]];
   }
 }
 
@@ -155,15 +155,25 @@ body { font: 13px 'Helvetica Neue', Helvetica; color:#626262; word-wrap:break-wo
 }
 
 
-#pragma mark - UIWebView
+#pragma mark - UIWebViewDelegate
 
 - (BOOL)webView:(UIWebView *)webView shouldStartLoadWithRequest:(NSURLRequest *)request navigationType:(UIWebViewNavigationType)navigationType {
-  if(navigationType == UIWebViewNavigationTypeOther)
-    return YES;
-  
-  return NO;
+  switch (navigationType) {
+    case UIWebViewNavigationTypeLinkClicked:
+      [self openURL:request.URL];
+      return NO;
+      break;
+    case UIWebViewNavigationTypeOther:
+      return YES;
+      break;
+    case UIWebViewNavigationTypeBackForward:
+    case UIWebViewNavigationTypeFormResubmitted:
+    case UIWebViewNavigationTypeFormSubmitted:
+    case UIWebViewNavigationTypeReload:
+      return NO;
+      break;
+  }
 }
-
 
 - (void)webViewDidFinishLoad:(UIWebView *)webView {
   if(_webViewContent)
@@ -181,6 +191,12 @@ body { font: 13px 'Helvetica Neue', Helvetica; color:#626262; word-wrap:break-wo
   self.webViewSize = CGSizeMake(fittingSize.width, [output integerValue]);
 }
 
+#pragma mark - Helper
+
+- (void)openURL:(NSURL *)URL {
+  [[UIApplication sharedApplication] openURL:URL];
+}
+
 @end
 
-#endif
+#endif /* HOCKEYSDK_FEATURE_UPDATES */

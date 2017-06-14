@@ -303,7 +303,7 @@ typedef NS_ENUM(NSInteger, BITImageAnnotationViewControllerInteractionMode) {
     BITImageAnnotation *candidate = nil;
     BOOL validView = YES;
     
-    for ( int i = 0; i<gestureRecognizer.numberOfTouches; i++){
+    for (uint i = 0; i < gestureRecognizer.numberOfTouches; i++){
       BITImageAnnotation *newCandidate = (BITImageAnnotation *)[self.view hitTest:[gestureRecognizer locationOfTouch:i inView:self.view] withEvent:nil];
       
       if (![newCandidate isKindOfClass:[BITImageAnnotation class]]){
@@ -358,12 +358,7 @@ typedef NS_ENUM(NSInteger, BITImageAnnotationViewControllerInteractionMode) {
   if (self.navigationController.navigationBar.alpha == 0 || self.navigationController.navigationBarHidden ){
     
     [UIView animateWithDuration:0.35f animations:^{
-      
-      if (NSFoundationVersionNumber > NSFoundationVersionNumber_iOS_6_1) {
-        [self.navigationController setNavigationBarHidden:NO animated:NO];
-      } else {
-        self.navigationController.navigationBar.alpha = 1.0;
-      }
+      [self.navigationController setNavigationBarHidden:NO animated:NO];
       
       if ([self respondsToSelector:@selector(prefersStatusBarHidden)]) {
         [self setNeedsStatusBarAppearanceUpdate];
@@ -380,12 +375,7 @@ typedef NS_ENUM(NSInteger, BITImageAnnotationViewControllerInteractionMode) {
     }];
   } else {
     [UIView animateWithDuration:0.35f animations:^{
-      
-      if (NSFoundationVersionNumber > NSFoundationVersionNumber_iOS_6_1) {
-        [self.navigationController setNavigationBarHidden:YES animated:NO];
-      } else {
-        self.navigationController.navigationBar.alpha = 0.0;
-      }
+      [self.navigationController setNavigationBarHidden:YES animated:NO];
       
       if ([self respondsToSelector:@selector(prefersStatusBarHidden)]) {
         [self setNeedsStatusBarAppearanceUpdate];
@@ -421,4 +411,4 @@ typedef NS_ENUM(NSInteger, BITImageAnnotationViewControllerInteractionMode) {
 }
 @end
 
-#endif
+#endif /* HOCKEYSDK_FEATURE_FEEDBACK */
